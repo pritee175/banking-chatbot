@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AccessBank - Tutorial</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">A AccessBank</div>
+        <nav>
+            <ul>
+                <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="/#about-section"><i class="fas fa-info-circle"></i> About</a></li>
+                <li><a href="/#features-section"><i class="fas fa-star"></i> Features</a></li>
+                <li><a href="/#contact-section"><i class="fas fa-address-book"></i> Contact</a></li>
+                <li><a href="#" onclick="openAccessibilitySettings()"><i class="fas fa-cog"></i> Accessibility</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="tutorial-container">
+        <h1>How to Use AccessBank</h1>
+        
+        <div class="tutorial-section">
+            <h2><i class="fas fa-comments"></i> Getting Started with Chat</h2>
+            <div class="tutorial-steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Start a Chat</h3>
+                        <p>Click the "Start Chat" button on the home page to begin your conversation with AccessBank AI.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Type Your Message</h3>
+                        <p>Type your banking-related question in the chat input field and press Enter or click Send.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Voice Commands</h3>
+                        <p>Click the microphone button to use voice input. Speak clearly and wait for the response.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tutorial-section">
+            <h2><i class="fas fa-universal-access"></i> Accessibility Features</h2>
+            <div class="tutorial-steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>High Contrast Mode</h3>
+                        <p>Enable high contrast mode for better visibility. Click the Accessibility icon and toggle "High Contrast Mode".</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Screen Reader Support</h3>
+                        <p>Our interface is optimized for screen readers. Enable screen reader optimization in the Accessibility settings.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Text Size Adjustment</h3>
+                        <p>Adjust text size using the slider in Accessibility settings. Choose between 12px and 24px.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Voice Commands</h3>
+                        <p>Use voice commands for navigation and actions. Enable voice commands in Accessibility settings.</p>
+                        <div class="command-list">
+                            <p>Available commands:</p>
+                            <ul>
+                                <li>"Start chat" - Open the chat interface</li>
+                                <li>"Enable high contrast" - Toggle high contrast mode</li>
+                                <li>"Enable screen reader" - Toggle screen reader optimization</li>
+                                <li>"Increase text size" - Make text larger</li>
+                                <li>"Decrease text size" - Make text smaller</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tutorial-section">
+            <h2><i class="fas fa-language"></i> Language Support</h2>
+            <div class="tutorial-steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Select Language</h3>
+                        <p>Choose your preferred language from the dropdown menu in the chat interface.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Translate Chat</h3>
+                        <p>Click the translate button to convert the conversation to your selected language.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tutorial-actions">
+            <button onclick="window.location.href='/'" class="back-button">
+                <i class="fas fa-arrow-left"></i> Back to Home
+            </button>
+            <button onclick="window.location.href='/#contact-section'" class="help-button">
+                <i class="fas fa-question-circle"></i> Need More Help?
+            </button>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>AccessBank</h3>
+                <p>Making banking accessible to everyone</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="/#about-section">About Us</a></li>
+                    <li><a href="/#features-section">Features</a></li>
+                    <li><a href="/#contact-section">Contact</a></li>
+                    <li><a href="/privacy">Privacy Policy</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Connect With Us</h3>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 AccessBank. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        function openAccessibilitySettings() {
+            // Implement accessibility settings modal
+            alert('Accessibility settings coming soon!');
+        }
+    </script>
+</body>
+</html> 

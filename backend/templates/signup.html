@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AccessBank - Sign Up</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="signup-container">
+        <div class="signup-box">
+            <h1>Welcome to AccessBank</h1>
+            <p>Choose your preferred signup method</p>
+            
+            <div class="signup-toggle">
+                <button class="toggle-btn active" onclick="toggleSignupMethod('biometric')">Biometric Signup</button>
+                <button class="toggle-btn" onclick="toggleSignupMethod('traditional')">Traditional Signup</button>
+            </div>
+
+            <div id="biometric-signup" class="signup-method">
+                <div class="biometric-options">
+                    <button class="biometric-btn" onclick="startVoiceSignup()">
+                        <i class="fas fa-microphone"></i>
+                        Voice Signup
+                    </button>
+                    <button class="biometric-btn" onclick="startFaceSignup()">
+                        <i class="fas fa-camera"></i>
+                        Face Recognition
+                    </button>
+                    <button class="biometric-btn" onclick="startFingerprintSignup()">
+                        <i class="fas fa-fingerprint"></i>
+                        Fingerprint
+                    </button>
+                </div>
+            </div>
+
+            <div id="traditional-signup" class="signup-method" style="display: none;">
+                <form id="signup-form" onsubmit="handleTraditionalSignup(event)">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm-password">Confirm Password</label>
+                        <input type="password" id="confirm-password" required>
+                    </div>
+                    <button type="submit" class="signup-btn">Sign Up</button>
+                </form>
+            </div>
+
+            <p class="login-link">Already have an account? <a href="/login">Login</a></p>
+        </div>
+    </div>
+
+    <script>
+        function toggleSignupMethod(method) {
+            const biometricDiv = document.getElementById('biometric-signup');
+            const traditionalDiv = document.getElementById('traditional-signup');
+            const buttons = document.querySelectorAll('.toggle-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (method === 'biometric') {
+                biometricDiv.style.display = 'block';
+                traditionalDiv.style.display = 'none';
+            } else {
+                biometricDiv.style.display = 'none';
+                traditionalDiv.style.display = 'block';
+            }
+        }
+
+        function startVoiceSignup() {
+            // Implement voice signup logic
+            alert('Voice signup feature coming soon!');
+        }
+
+        function startFaceSignup() {
+            // Implement face recognition signup logic
+            alert('Face recognition signup feature coming soon!');
+        }
+
+        function startFingerprintSignup() {
+            // Implement fingerprint signup logic
+            alert('Fingerprint signup feature coming soon!');
+        }
+
+        function handleTraditionalSignup(event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            if (password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+
+            // Implement traditional signup logic
+            alert('Traditional signup feature coming soon!');
+        }
+    </script>
+</body>
+</html> 
