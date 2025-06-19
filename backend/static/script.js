@@ -457,21 +457,6 @@ document.addEventListener('DOMContentLoaded', function() {
             startVoiceRecognition(null, true);
         }, 300);
     }
-
-    // Add profile icon to header if on home page
-    const header = document.querySelector('header');
-    if (header && !document.getElementById('profileBtn')) {
-        const btn = document.createElement('button');
-        btn.id = 'profileBtn';
-        btn.title = 'Profile';
-        btn.style.background = 'none';
-        btn.style.border = 'none';
-        btn.style.cursor = 'pointer';
-        btn.style.marginLeft = '16px';
-        btn.innerHTML = '<img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Profile" style="width:36px;height:36px;border-radius:50%;">';
-        btn.onclick = () => { window.location.href = '/profile'; };
-        header.appendChild(btn);
-    }
 });
 
 function toggleHighContrast() {
@@ -590,28 +575,5 @@ function updateChatFontSize() {
     document.querySelectorAll('.user-message, .bot-message').forEach(elem => {
         elem.style.fontSize = chatFontSize + 'px';
     });
-}
-
-// Voice navigation: show my profile
-if (window.location.pathname === '/home') {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'en-US';
-        recognition.continuous = true;
-        recognition.interimResults = false;
-        recognition.onresult = function(event) {
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                    const command = event.results[i][0].transcript.trim().toLowerCase();
-                    if (command.includes('show my profile')) {
-                        window.location.href = '/profile';
-                    }
-                }
-            }
-        };
-        recognition.onend = function() { recognition.start(); };
-        recognition.start();
-    }
 }
 

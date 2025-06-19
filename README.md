@@ -1,78 +1,73 @@
 # Banking Chatbot
 
-A modern, accessible banking chatbot web application with advanced voice navigation and support for users with disabilities.
+A modern banking chatbot application with biometric authentication and AI-powered assistance.
 
 ## Features
-- **Voice Navigation**: Navigate the app, perform actions, and interact with the chatbot using voice commands (supports English and Hindi).
-- **Accessibility**: Designed for users with disabilities, including screen reader support and accessible UI.
-- **Profile Management**: Edit your name, email, contact, disability info, and manage personal tasks.
-- **Task Management**: Add and remove tasks via UI or voice commands.
-- **Text-to-Speech**: Chatbot responses are read aloud in the appropriate language.
-- **Multi-page Navigation**: Voice commands work across Home, Chatbot, Tutorial, and Profile pages.
-- **Modern UI**: Clean, responsive, and visually appealing interface.
 
-## Getting Started
+- 🤖 AI-powered banking assistant
+- 🔐 Multiple authentication methods:
+  - Traditional email/password
+  - Voice recognition
+  - Face recognition
+  - Fingerprint authentication
+- 🌐 Multi-language support
+- ♿ Accessibility features
+- 💬 Real-time chat interface
 
-### Prerequisites
-- Python 3.8+
-- Node.js (for frontend if using Next.js)
-- (Optional) Virtual environment for Python
+## Tech Stack
 
-### Backend Setup
-1. Navigate to the `backend` directory:
-   ```sh
-   cd backend
-   ```
-2. Install Python dependencies:
-   ```sh
-   pip install -r requirements.txt
-   ```
-3. Run the Flask server:
-   ```sh
-   python app.py
-   ```
+- Frontend: Next.js
+- Backend: Flask (Python)
+- AI: GitHub Inference API
+- Authentication: Custom biometric system
 
-### Frontend Setup (if using Next.js)
-1. Navigate to the root directory:
-   ```sh
-   cd ..
-   ```
-2. Install Node.js dependencies:
-   ```sh
-   npm install
-   ```
-3. Start the Next.js development server:
-   ```sh
-   npm run dev
-   ```
+## Setup
 
-## Usage
-- Access the app at `http://localhost:5000` (Flask backend) or the appropriate frontend port.
-- Use the microphone button or voice commands to interact with the chatbot and navigate pages.
-- Edit your profile and manage tasks from the Profile page.
-
-## Accessibility & Voice Navigation
-- All major actions can be performed via voice (e.g., "go to homepage", "show my profile", "add task", "remove task").
-- Chatbot supports both English and Hindi for input and output (including speech synthesis).
-- UI is designed for high contrast and screen reader compatibility.
-
-## Project Structure
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/banking-chatbot.git
+cd banking-chatbot
 ```
-banking-chatbot/
-  backend/
-    app.py
-    requirements.txt
-    static/
-    templates/
-  src/
-    ... (frontend code)
-  README.md
-  package.json
-  ...
+
+2. Set up the backend:
+```bash
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+
+# Install dependencies
+pip install -r backend/requirements.txt
+
+# Set environment variables
+export GITHUB_TOKEN="your_github_token"  # On Windows: $env:GITHUB_TOKEN="your_github_token"
 ```
+
+3. Set up the frontend:
+```bash
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+```
+
+4. Access the application:
+- Frontend: http://localhost:5000
+- Backend API: http://localhost:5000/api
+
+## Environment Variables
+
+- `GITHUB_TOKEN`: Your GitHub token for AI inference
+- `GEMINI_API_KEY`: Your Gemini API key (optional)
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
-This project is for educational/demo purposes. Please contact the author for licensing details.
 
----
-Feel free to contribute or suggest improvements! 
+This project is licensed under the MIT License - see the LICENSE file for details. 
