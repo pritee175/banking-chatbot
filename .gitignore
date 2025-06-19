@@ -1,20 +1,44 @@
 # Python
+venv/
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node
+node_modules/
+.next/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# Environment
+.env
+.env.*
+
+# Logs
+*.log
+
+# Others
+*.swp
+*.swo
+
+# Python
 *.py[cod]
 *$py.class
 *.so
 .Python
-venv/
 ENV/
 env/
 .env
 
 # Node
-node_modules/
-.next/
 out/
 build/
-.DS_Store
 *.pem
 .env.local
 .env.development.local
@@ -25,8 +49,6 @@ yarn-debug.log*
 yarn-error.log*
 
 # IDE
-.idea/
-.vscode/
 *.swp
 *.swo
 
