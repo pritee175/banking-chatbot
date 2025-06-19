@@ -1,7 +1,7 @@
 console.log("script.js loaded and executing...");
 
 let recognition; // Declare globally for continuous use
-let isVoiceCommandsEnabled = false; // Manages the continuous voice command feature
+let isVoiceNavigationEnabled = false; // Manages the continuous voice navigation feature
 
 // Add a new variable to track if the "Speak" button has initiated recognition
 let isSpeakButtonActive = false;
@@ -12,12 +12,19 @@ let isBotSpeaking = false;
 // Variable to hold the timeout ID for recognition restart
 let recognitionRestartTimeoutId = null;
 
+let chatFontSize = 16; // Default font size in px
+
 function sendMessage(message) {
     let userInput = message || document.getElementById("user-input").value;
     if (!userInput) return;
 
     let chatBox = document.getElementById("chat-box");
-    chatBox.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
+    // Add user message with class
+    const userMsgElem = document.createElement('p');
+    userMsgElem.className = 'user-message';
+    userMsgElem.innerHTML = `<strong>You:</strong> ${userInput}`;
+    userMsgElem.style.fontSize = chatFontSize + 'px'; // Use dynamic font size
+    chatBox.appendChild(userMsgElem);
 
     fetch("/chat", {
         method: "POST",
@@ -26,12 +33,21 @@ function sendMessage(message) {
     })
     .then(response => response.json())
     .then(data => {
-        chatBox.innerHTML += `<p><strong>Bot:</strong> ${data.response}</p>`;
+        // Add bot message with class
+        const botMsgElem = document.createElement('p');
+        botMsgElem.className = 'bot-message';
+        botMsgElem.innerHTML = `<strong>Bot:</strong> ${data.response}`;
+        botMsgElem.style.fontSize = chatFontSize + 'px'; // Use dynamic font size
+        chatBox.appendChild(botMsgElem);
         chatBox.scrollTop = chatBox.scrollHeight;
     })
     .catch(error => {
         console.error('Error sending message:', error);
-        chatBox.innerHTML += `<p><strong>Bot (Error):</strong> An error occurred while sending your message.</p>`;
+        const botMsgElem = document.createElement('p');
+        botMsgElem.className = 'bot-message';
+        botMsgElem.innerHTML = `<strong>Bot (Error):</strong> An error occurred while sending your message.`;
+        botMsgElem.style.fontSize = chatFontSize + 'px';
+        chatBox.appendChild(botMsgElem);
     });
 
     if (!message) { // Only clear if not sent via voice auto-send
@@ -60,9 +76,9 @@ function speakText(text) {
         console.log("Speech output finished.");
         isBotSpeaking = false; // Reset flag when bot finishes speaking
 
-        // If continuous voice commands are enabled, restart recognition after a short delay
+        // If continuous voice navigation is enabled, restart recognition after a short delay
         // This is the SOLE place where continuous recognition should restart after bot speech
-        if (isVoiceCommandsEnabled) {
+        if (isVoiceNavigationEnabled) {
             recognitionRestartTimeoutId = setTimeout(() => {
                 if (recognition && !recognition.recognizing) { // Check if recognition is truly not active
                     recognition.start();
@@ -78,17 +94,22 @@ function speakText(text) {
     window.speechSynthesis.speak(utterance);
 }
 
-// Function to toggle continuous voice commands
-function toggleVoiceCommands() {
-    const voiceCommandsToggle = document.getElementById('voiceCommandsToggle');
-    isVoiceCommandsEnabled = voiceCommandsToggle.checked;
+// Function to toggle continuous voice navigation
+function toggleVoiceNavigation() {
+    const voiceNavigationToggle = document.getElementById('voiceNavigationToggle');
+    isVoiceNavigationEnabled = voiceNavigationToggle.checked;
 
-    if (isVoiceCommandsEnabled) {
-        // Start continuous recognition for voice commands
+    if (isVoiceNavigationEnabled) {
+        // Stop any existing recognition before starting a new one
+        if (recognition) {
+            recognition.stop();
+        }
+        
+        // Start continuous recognition for voice navigation
         startVoiceRecognition(null, true); // Pass null for speakButton as it's not directly tied to the button
         // Delay the initial prompt to avoid immediate start-stop conflict
         setTimeout(() => {
-            speakText("Voice commands enabled. Give voice command to navigate screen.");
+            speakText("Voice navigation enabled. Say things like: go to home, open chat, enable high contrast.");
         }, 500); // Short delay
     } else {
         if (recognition) {
@@ -96,27 +117,9 @@ function toggleVoiceCommands() {
             // Immediately stop any ongoing speech from the bot
             window.speechSynthesis.cancel();
         }
-        console.log("Voice commands disabled.");
-        // Removed: speakText("Voice commands disabled."); to prevent further speech
+        console.log("Voice navigation disabled.");
     }
 }
-
-// Add event listener for the voice commands toggle
-document.addEventListener('DOMContentLoaded', () => {
-    const voiceCommandsToggle = document.getElementById('voiceCommandsToggle');
-    if (voiceCommandsToggle) {
-        voiceCommandsToggle.addEventListener('change', toggleVoiceCommands);
-        // Initial load check for voice commands
-        isVoiceCommandsEnabled = localStorage.getItem('voiceCommands') === 'true';
-        voiceCommandsToggle.checked = isVoiceCommandsEnabled;
-        if (isVoiceCommandsEnabled) {
-            setTimeout(() => {
-                startVoiceRecognition(null, true); // Start continuous recognition on load if enabled
-                console.log("Voice commands enabled from localStorage.");
-            }, 500); // Small delay to ensure everything is ready
-        }
-    }
-});
 
 // Modified to accept speakButton and a flag for continuous recognition
 function startVoiceRecognition(speakButton, isContinuous = false) {
@@ -157,7 +160,7 @@ function startVoiceRecognition(speakButton, isContinuous = false) {
             speakButton.classList.add('recording');
             isSpeakButtonActive = true; // Indicate that speak button started recognition
         } else {
-            // If continuous voice commands started it, ensure UI reflects it if needed
+            // If continuous voice navigation started it, ensure UI reflects it if needed
             console.log("Continuous voice recognition started.");
         }
     };
@@ -190,33 +193,12 @@ function startVoiceRecognition(speakButton, isContinuous = false) {
                     recognition.stop();
                 }
             } else if (isContinuous) {
-                // For continuous voice commands, process as a command (navigation/accessibility)
+                // For continuous voice navigation, process as a command (navigation/accessibility)
                 // Do NOT update userInputElement or send to main chatbot
                 if (finalTranscript.trim() !== '') {
-                    fetch('/voice_chat', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({message: finalTranscript.toLowerCase().trim()})
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log("Backend response for voice command:", data);
-                        if (data.response) {
-                            speakText(data.response); // Speak ONLY if backend provides a specific confirmation/response
-                        }
-                        if (data.command) {
-                            handleVoiceCommand(data.command, data.action);
-                        }
-                        // DO NOT call sendMessage() here for continuous voice commands
-                    })
-                    .catch(error => {
-                        console.error('Error sending voice command to backend:', error);
-                        // For continuous voice commands, remain silent on backend errors to avoid loops
-                        console.log("Voice command backend error. Remaining silent.");
-                    });
+                    handleVoiceNavigationCommand(finalTranscript.toLowerCase().trim());
                 } else {
-                    console.log("Final transcript is empty for continuous voice commands. Not sending to backend and remaining silent.");
-                    // Remain silent for empty input in continuous mode
+                    console.log("Final transcript is empty for continuous voice navigation. Not processing.");
                 }
             }
         }
@@ -224,7 +206,7 @@ function startVoiceRecognition(speakButton, isContinuous = false) {
 
     recognition.onerror = function(event) {
         console.error("Speech recognition error:", event.error);
-        // Only speak error for manual 'Speak' button, NOT for continuous voice commands
+        // Only speak error for manual 'Speak' button, NOT for continuous voice navigation
         if (speakButton && isSpeakButtonActive) { // Reset button if it was active
             speakButton.textContent = '🎙️ Speak';
             speakButton.classList.remove('recording');
@@ -232,10 +214,20 @@ function startVoiceRecognition(speakButton, isContinuous = false) {
             // For single-shot speak button, it's okay to give feedback immediately
             speakText("Sorry, I didn't catch that. Please try again.");
         } else if (isContinuous) {
-            console.log("Continuous voice command error. Remaining silent."); // Remain silent for errors in continuous mode
-        }
-        if (recognition) { // Ensure recognition object exists
-            recognition.stop(); // Stop recognition on error to prevent continuous errors
+            console.log("Continuous voice navigation error. Attempting to restart...");
+            if (recognition) { // Ensure recognition object exists
+                recognition.stop(); // Stop recognition on error to prevent continuous errors
+            }
+            // Attempt to restart continuous recognition after a delay if still enabled
+            if (isVoiceNavigationEnabled && event.error !== 'not-allowed') { // Don't restart if permission denied
+                 recognitionRestartTimeoutId = setTimeout(() => {
+                    if (recognition && !recognition.recognizing) {
+                        recognition.start();
+                        console.log("Continuous recognition restarted after error.");
+                    }
+                    recognitionRestartTimeoutId = null;
+                }, 1000); // Longer delay after error
+            }
         }
     };
 
@@ -247,11 +239,21 @@ function startVoiceRecognition(speakButton, isContinuous = false) {
             isSpeakButtonActive = false;
         }
 
-        // In continuous mode, do NOT restart recognition here directly.
-        // The restart (after bot speech or initial enable) is handled elsewhere (speakText's utterance.onend).
-        if (isContinuous) {
-            console.log("Continuous recognition ended. Restart handled externally.");
-        } else {
+        // For continuous voice navigation, restart recognition if it's still enabled
+        // and the bot is not currently speaking (to avoid interrupting bot speech).
+        // This handles cases where a voice command is processed without immediate bot speech.
+        if (isContinuous && isVoiceNavigationEnabled && !isBotSpeaking) {
+            console.log("Continuous recognition ended without bot speech. Restarting...");
+            recognitionRestartTimeoutId = setTimeout(() => {
+                if (recognition && !recognition.recognizing) {
+                    recognition.start();
+                    console.log("Continuous recognition resumed directly from onend.");
+                } else {
+                    console.log("Not restarting continuous recognition directly from onend (already active).");
+                }
+                recognitionRestartTimeoutId = null;
+            }, 200); // Short delay before restarting
+        } else if (!isContinuous) {
             console.log("Single recognition session ended (not continuous).");
         }
     };
@@ -259,53 +261,92 @@ function startVoiceRecognition(speakButton, isContinuous = false) {
     recognition.start();
 }
 
-// Handle the 'Speak' button click - now only for single-shot voice input
-function toggleSpeak(speakButton) {
-    console.log("toggleSpeak() called.");
+function handleVoiceNavigationCommand(command) {
+    console.log(`Handling voice navigation command: ${command}`);
 
-    // If recognition is currently active and was started by this button, stop it.
-    // Otherwise, start a new (non-continuous) recognition session.
-    if (recognition && recognition.recognizing && isSpeakButtonActive) {
-        console.log("Speak button: Recognition active, stopping it.");
-        recognition.stop();
-        speakButton.textContent = '🎙️ Speak';
-        speakButton.classList.remove('recording');
-        isSpeakButtonActive = false; // Reset flag
+    if (command.includes("go to home") || command.includes("home page")) {
+        // Ensure voice navigation state is preserved
+        localStorage.setItem('voiceNavigation', 'true');
+        // Stop current recognition before navigation
+        if (recognition) {
+            recognition.stop();
+        }
+        window.location.href = '/home';
+        speakText("Navigating to home page.");
+    } else if (command.includes("open chat") || command.includes("go to chatbot")) {
+        // Ensure voice navigation state is preserved
+        localStorage.setItem('voiceNavigation', 'true');
+        // Stop current recognition before navigation
+        if (recognition) {
+            recognition.stop();
+        }
+        window.location.href = '/chatbot';
+        speakText("Opening chat.");
+    } else if (command.includes("enable high contrast")) {
+        const highContrastToggle = document.getElementById('highContrastToggle');
+        if (highContrastToggle) {
+            highContrastToggle.checked = true;
+            toggleHighContrast();
+            speakText("High contrast mode enabled.");
+        }
+    } else if (command.includes("disable high contrast")) {
+        const highContrastToggle = document.getElementById('highContrastToggle');
+        if (highContrastToggle) {
+            highContrastToggle.checked = false;
+            toggleHighContrast();
+            speakText("High contrast mode disabled.");
+        }
+    } else if (command.includes("enable screen reader")) {
+        const screenReaderToggle = document.getElementById('screenReaderToggle');
+        if (screenReaderToggle) {
+            screenReaderToggle.checked = true;
+            toggleScreenReader();
+            speakText("Screen reader optimization enabled.");
+        }
+    } else if (command.includes("disable screen reader")) {
+        const screenReaderToggle = document.getElementById('screenReaderToggle');
+        if (screenReaderToggle) {
+            screenReaderToggle.checked = false;
+            toggleScreenReader();
+            speakText("Screen reader optimization disabled.");
+        }
+    } else if (command.includes("increase text size")) {
+        adjustTextSize('increase');
+        speakText("Increasing text size.");
+    } else if (command.includes("decrease text size")) {
+        adjustTextSize('decrease');
+        speakText("Decreasing text size.");
+    } else if (command.includes("focus input") || command.includes("type here")) {
+        const userInput = document.getElementById("user-input");
+        if (userInput && typeof userInput.focus === 'function') {
+            userInput.focus();
+            speakText("Input field focused.");
+        }
+    } else if (command.includes("go back")) {
+        window.history.back();
+        speakText("Going back.");
     } else {
-        console.log("Speak button: Recognition not active or not started by button, starting a single session.");
-        startVoiceRecognition(speakButton, false); // Start non-continuous recognition
+        speakText("I didn't understand that navigation command.");
     }
 }
 
-// Update the event listener for the speak button
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOMContentLoaded fired, attempting to assign speak button handler.");
+// Existing toggleSpeak function
+function toggleSpeak(speakButton) {
+    if (recognition && recognition.recognizing) {
+        recognition.stop();
+        speakButton.textContent = '🎙️ Speak';
+        speakButton.classList.remove('recording');
+        isSpeakButtonActive = false;
+    } else {
+        startVoiceRecognition(speakButton, false); // Start as non-continuous for button
+    }
+}
+
+// Event listener for the Speak button and accessibility settings
+document.addEventListener('DOMContentLoaded', function() {
     const speakButton = document.getElementById('speak-button');
     if (speakButton) {
-        speakButton.onclick = () => toggleSpeak(speakButton); // Pass speakButton to toggleSpeak
-        console.log("Speak button handler assigned.");
-    } else {
-        console.error("Speak button with ID 'speak-button' not found!");
-    }
-
-    // Initial setup of other event listeners (Send, Translate, Tutorial, Chat)
-    const sendButton = document.getElementById("send-button");
-    if (sendButton) {
-        sendButton.addEventListener("click", () => sendMessage());
-    }
-
-    const userInputField = document.getElementById("user-input");
-    if (userInputField) {
-        userInputField.addEventListener("keypress", function (event) {
-            if (event.key === "Enter") {
-                // If continuous voice commands are enabled and recognition is active, stop it
-                if (isVoiceCommandsEnabled && recognition && recognition.recognizing) {
-                    console.log("Enter key pressed: Stopping continuous recognition.");
-                    recognition.stop();
-                }
-                sendMessage();
-            }
-        });
+        speakButton.addEventListener('click', () => toggleSpeak(speakButton));
     }
 
     const translateButton = document.getElementById('translate-button');
@@ -313,143 +354,125 @@ document.addEventListener('DOMContentLoaded', () => {
         translateButton.addEventListener('click', translateChat);
     }
 
-    const tutorialButton = document.getElementById('tutorial-button');
-    if (tutorialButton) {
-        tutorialButton.addEventListener('click', showTutorial);
+    const userInputField = document.getElementById('user-input');
+    if (userInputField) {
+        userInputField.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
     }
 
-    const chatButton = document.getElementById('chat-button');
-    if (chatButton) {
-        chatButton.addEventListener('click', showChat);
+    // Accessibility modal elements
+    const accessibilityIcon = document.querySelector('.navbar ul li a[onclick="openAccessibilitySettings()"]');
+    if (accessibilityIcon) {
+        accessibilityIcon.addEventListener('click', openAccessibilitySettings);
     }
 
-    const closeChatButton = document.getElementById('close-chat');
-    if (closeChatButton) {
-        closeChatButton.addEventListener('click', hideChat);
+    const closeButton = document.querySelector('.accessibility-modal .close-button');
+    if (closeButton) {
+        closeButton.addEventListener('click', closeAccessibilitySettings);
     }
 
-    // Accessibility feature event listeners and localStorage persistence
+    const textSizeSlider = document.getElementById('textSizeSlider');
+    const currentTextSizeSpan = document.getElementById('currentTextSize');
+    if (textSizeSlider && currentTextSizeSpan) {
+        textSizeSlider.addEventListener('input', (event) => {
+            const size = event.target.value;
+            if (document.body) {
+                document.body.style.fontSize = `${size}px`;
+            }
+            currentTextSizeSpan.textContent = `Current: ${size}px`;
+        });
+        textSizeSlider.addEventListener('change', () => {
+            localStorage.setItem('textSize', document.body.style.fontSize);
+        });
+
+        // Set initial slider position and display
+        const initialSize = parseFloat(document.body.style.fontSize) || 16; // Default to 16px if not set
+        textSizeSlider.value = initialSize;
+        currentTextSizeSpan.textContent = `Current: ${initialSize}px`;
+    }
+
     const highContrastToggle = document.getElementById('highContrastToggle');
-    const screenReaderToggle = document.getElementById('screenReaderToggle');
-    const voiceCommandsToggle = document.getElementById('voiceCommandsToggle');
-    const increaseTextButton = document.getElementById('increaseText');
-    const decreaseTextButton = document.getElementById('decreaseText');
-
     if (highContrastToggle) {
         highContrastToggle.addEventListener('change', () => {
             toggleHighContrast();
             localStorage.setItem('highContrast', highContrastToggle.checked);
         });
-        // Apply saved state on load
         const savedHighContrast = localStorage.getItem('highContrast');
         if (savedHighContrast !== null) {
             highContrastToggle.checked = (savedHighContrast === 'true');
-            toggleHighContrast(); // Apply the state
+            toggleHighContrast();
         }
     }
 
+    const screenReaderToggle = document.getElementById('screenReaderToggle');
     if (screenReaderToggle) {
         screenReaderToggle.addEventListener('change', () => {
             toggleScreenReader();
             localStorage.setItem('screenReader', screenReaderToggle.checked);
         });
-        // Apply saved state on load
         const savedScreenReader = localStorage.getItem('screenReader');
         if (savedScreenReader !== null) {
             screenReaderToggle.checked = (savedScreenReader === 'true');
-            toggleScreenReader(); // Apply the state
+            toggleScreenReader();
         }
     }
 
-    if (voiceCommandsToggle) {
-        voiceCommandsToggle.addEventListener('change', () => {
-            toggleVoiceCommands();
-            localStorage.setItem('voiceCommands', voiceCommandsToggle.checked);
+    // Voice Navigation: Initialize state and set up toggle listener
+    // Note: voiceNavigationToggle is declared and used here only once in DOMContentLoaded
+    const voiceNavigationToggle = document.getElementById('voiceNavigationToggle');
+    
+    fetchVoiceState(); // Always fetch from backend and start recognition if enabled
+    document.querySelectorAll('.voice-toggle').forEach(toggle => {
+        toggle.addEventListener('change', (e) => {
+            updateVoiceState(e.target.checked);
+            if (!e.target.checked) {
+                sessionStorage.removeItem('voiceNavigationPersistent');
+            }
         });
-        // Apply saved state on load
-        isVoiceCommandsEnabled = localStorage.getItem('voiceCommands') === 'true';
-        voiceCommandsToggle.checked = isVoiceCommandsEnabled;
-        if (isVoiceCommandsEnabled) {
-            setTimeout(() => {
-                startVoiceRecognition(null, true); // Start continuous recognition on load if enabled
-                console.log("Voice commands enabled from localStorage.");
-            }, 500); // Small delay to ensure everything is ready
-        }
-    }
+    });
 
-    if (increaseTextButton) {
-        increaseTextButton.addEventListener('click', () => {
-            adjustTextSize('increase');
-            localStorage.setItem('textSize', document.body.style.fontSize);
+    const increaseTextBtn = document.getElementById('increaseText');
+    const decreaseTextBtn = document.getElementById('decreaseText');
+    if (increaseTextBtn && decreaseTextBtn) {
+        increaseTextBtn.addEventListener('click', function() {
+            chatFontSize = Math.min(chatFontSize + 2, 24);
+            updateChatFontSize();
         });
-    }
-
-    if (decreaseTextButton) {
-        decreaseTextButton.addEventListener('click', () => {
-            adjustTextSize('decrease');
-            localStorage.setItem('textSize', document.body.style.fontSize);
+        decreaseTextBtn.addEventListener('click', function() {
+            chatFontSize = Math.max(chatFontSize - 2, 12);
+            updateChatFontSize();
         });
     }
 
-    // Apply saved text size on load
-    const savedTextSize = localStorage.getItem('textSize');
-    if (savedTextSize) {
-        document.body.style.fontSize = savedTextSize;
+    // Auto-enable voice navigation if persistent flag is set
+    if (sessionStorage.getItem('voiceNavigationPersistent') === 'true') {
+        document.querySelectorAll('.voice-toggle').forEach(toggle => {
+            toggle.checked = true;
+        });
+        updateVoiceState(true);
+        setTimeout(() => {
+            startVoiceRecognition(null, true);
+        }, 300);
+    }
+
+    // Add profile icon to header if on home page
+    const header = document.querySelector('header');
+    if (header && !document.getElementById('profileBtn')) {
+        const btn = document.createElement('button');
+        btn.id = 'profileBtn';
+        btn.title = 'Profile';
+        btn.style.background = 'none';
+        btn.style.border = 'none';
+        btn.style.cursor = 'pointer';
+        btn.style.marginLeft = '16px';
+        btn.innerHTML = '<img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Profile" style="width:36px;height:36px;border-radius:50%;">';
+        btn.onclick = () => { window.location.href = '/profile'; };
+        header.appendChild(btn);
     }
 });
-
-function handleVoiceCommand(command, action) {
-    console.log(`Handling voice command: ${command}, action: ${action}`);
-    switch (command) {
-        case "start_chat":
-            showChat();
-            speakText("Chat opened.");
-            break;
-        case "go_to_home":
-            window.location.href = '/';
-            speakText("Navigating to home page.");
-            break;
-        case "toggle_high_contrast":
-            const highContrastToggle = document.getElementById('highContrastToggle');
-            if (highContrastToggle) {
-                highContrastToggle.checked = (action === "enable");
-                toggleHighContrast();
-                speakText(`High contrast mode ${action === "enable" ? "enabled" : "disabled"}.`);
-            }
-            break;
-        case "toggle_screen_reader":
-            const screenReaderToggle = document.getElementById('screenReaderToggle');
-            if (screenReaderToggle) {
-                screenReaderToggle.checked = (action === "enable");
-                toggleScreenReader();
-                speakText(`Screen reader optimization ${action === "enable" ? "enabled" : "disabled"}.`);
-            }
-            break;
-        case "adjust_text_size":
-            adjustTextSize(action);
-            speakText(`Text size ${action === "increase" ? "increased" : "decreased"}.`);
-            break;
-        case "toggle_voice_commands":
-            const voiceCommandsToggle = document.getElementById('voiceCommandsToggle');
-            if (voiceCommandsToggle) {
-                voiceCommandsToggle.checked = false; // Always disable for this command
-                toggleVoiceCommands();
-                speakText("Voice commands disabled.");
-            }
-            break;
-        case "focus_input":
-            const userInput = document.getElementById("user-input");
-            if (userInput) {
-                userInput.focus();
-                speakText("Input field focused.");
-            }
-            break;
-        default:
-            console.log("Unknown voice command.");
-            speakText("I didn't understand that voice command.");
-            break;
-    }
-}
 
 function toggleHighContrast() {
     document.body.classList.toggle('high-contrast', document.getElementById('highContrastToggle').checked);
@@ -469,7 +492,9 @@ function adjustTextSize(action) {
         newSize = Math.max(currentSize - 2, 12); // Min font size 12px
     }
 
-    document.body.style.fontSize = `${newSize}px`;
+    if (document.body) {
+        document.body.style.fontSize = `${newSize}px`;
+    }
 }
 
 // Function for translation
@@ -479,7 +504,7 @@ function translateChat() {
     const translateLang = document.getElementById('translate-lang').value; // Get selected language
 
     // Check if there's content to translate
-    const contentToTranslate = userInput.trim(); // Prioritize user input
+    let contentToTranslate = userInput.trim(); // Prioritize user input
 
     // If user input is empty, try to translate the last bot message
     if (!contentToTranslate && chatBox.lastElementChild) {
@@ -533,3 +558,60 @@ function hideChat() {
     // This function is likely called from the chatbot page itself to return to the main page
     window.location.href = '/';
 }
+
+function setVoiceToggle(state) {
+    document.querySelectorAll('.voice-toggle').forEach(toggle => {
+        toggle.checked = state;
+    });
+    // Start or stop voice navigation based on state
+    if (state) {
+        startVoiceRecognition(null, true); // Start continuous recognition
+    } else if (recognition) {
+        recognition.stop();
+    }
+}
+
+function fetchVoiceState() {
+    fetch('/api/voice-navigation')
+        .then(res => res.json())
+        .then(data => setVoiceToggle(data.enabled));
+}
+
+function updateVoiceState(enabled) {
+    fetch('/api/voice-navigation', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({enabled})
+    });
+    setVoiceToggle(enabled);
+}
+
+function updateChatFontSize() {
+    document.querySelectorAll('.user-message, .bot-message').forEach(elem => {
+        elem.style.fontSize = chatFontSize + 'px';
+    });
+}
+
+// Voice navigation: show my profile
+if (window.location.pathname === '/home') {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        recognition.onresult = function(event) {
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    const command = event.results[i][0].transcript.trim().toLowerCase();
+                    if (command.includes('show my profile')) {
+                        window.location.href = '/profile';
+                    }
+                }
+            }
+        };
+        recognition.onend = function() { recognition.start(); };
+        recognition.start();
+    }
+}
+

@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from flask_cors import CORS
 from openai import OpenAI  # Import the OpenAI library
 # import google.generativeai as genai # Comment out or remove Gemini import
@@ -15,6 +15,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
+app.secret_key = 'your-very-secret-key'  # Use a strong, random value in production!
 CORS(app)
 
 # Load GitHub Token from environment variable
@@ -33,7 +34,11 @@ client = OpenAI(
 users = {}
 
 @app.route('/')
-def index():
+def login_entry():
+    return render_template('login.html')
+
+@app.route('/home')
+def home():
     return render_template('index.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
@@ -154,44 +159,18 @@ def translate():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/voice_chat', methods=['POST'])
-def voice_chat():
-    """Handles voice-based chatbot queries. Expects transcribed text from frontend."""
-    user_message = request.json.get('message', '').strip()
+@app.route('/api/voice-navigation', methods=['GET', 'POST'])
+def voice_navigation():
+    if request.method == 'POST':
+        state = request.json.get('enabled', False)
+        session['voice_navigation'] = state
+        return jsonify({'enabled': state})
+    else:
+        return jsonify({'enabled': session.get('voice_navigation', False)})
 
-    if not user_message:
-        logger.info("Received empty voice message.")
-        return jsonify({"status": "empty_message", "message": "No audio input detected or message was empty."}), 200
-
-    try:
-        # Process specific voice commands (these would come from client-side STT)
-        if user_message.lower() == "start chat":
-            return jsonify({"command": "start_chat", "response": "Opening chat."})
-        elif user_message.lower() == "enable high contrast":
-            return jsonify({"command": "toggle_high_contrast", "action": "enable", "response": "High contrast mode enabled."})
-        elif user_message.lower() == "disable high contrast":
-            return jsonify({"command": "toggle_high_contrast", "action": "disable", "response": "High contrast mode disabled."})
-        elif user_message.lower() == "enable screen reader":
-            return jsonify({"command": "toggle_screen_reader", "action": "enable", "response": "Screen reader optimization enabled."})
-        elif user_message.lower() == "disable screen reader":
-            return jsonify({"command": "toggle_screen_reader", "action": "disable", "response": "Screen reader optimization disabled."})
-        elif user_message.lower() == "increase text size":
-            return jsonify({"command": "adjust_text_size", "action": "increase", "response": "Increasing text size."})
-        elif user_message.lower() == "decrease text size":
-            return jsonify({"command": "adjust_text_size", "action": "decrease", "response": "Decreasing text size."})
-        elif user_message.lower() == "disable voice commands":
-            return jsonify({"command": "toggle_voice_commands", "action": "disable", "response": "Voice commands disabled."})
-        elif user_message.lower() == "go to home page":
-            return jsonify({"command": "go_to_home", "response": "Navigating to home page."})
-        # Add other specific voice commands here as elif conditions
-
-        # If the message is not a recognized voice command, do NOT send it to the LLM
-        logger.info(f"Unrecognized voice command: {user_message}")
-        return jsonify({"status": "unrecognized_command", "message": "Voice command not recognized."}), 200
-
-    except Exception as e:
-        logger.error(f"Voice chat error: {e}")
-        return jsonify({"error": f"An error occurred during voice processing: {str(e)}. Please check your GitHub token and model access."}), 500
+@app.route('/profile')
+def profile():
+    return render_template('profile.html')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='localhost') 

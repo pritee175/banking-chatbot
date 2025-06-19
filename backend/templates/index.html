@@ -39,7 +39,7 @@
                     <p>Our mission is to provide an inclusive banking experience through innovative technology and thoughtful design, ensuring that every user can manage their finances independently and confidently.</p>
                 </div>
                 <div class="about-image">
-                    <img src="{{ url_for('static', filename='images/accessibility-banking.jpg') }}" alt="Accessibility in Banking">
+                    <img src="https://digitalmarketingstream.com/wp-content/uploads/2023/04/Chatbot.AdobeStock_194734459-scaled-1080x675.jpeg" alt="Accessibility in Banking" style="max-width: 300px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin: 20px auto; display: block;">
                 </div>
             </div>
         </div>
@@ -171,12 +171,12 @@
 
             <div class="setting-item">
                 <div class="setting-text">
-                    <i class="fas fa-microphone"></i>
-                    <h3>Voice Commands</h3>
-                    <p>Enable voice control for navigation and actions</p>
+                    <i class="fas fa-arrows-alt"></i>
+                    <h3>Voice Navigation</h3>
+                    <p>Navigate the application using voice commands</p>
                 </div>
                 <label class="switch">
-                    <input type="checkbox" id="voiceCommandsToggle">
+                    <input type="checkbox" class="voice-toggle" id="voiceNavigationToggle">
                     <span class="slider round"></span>
                 </label>
             </div>
@@ -221,38 +221,15 @@
         </div>
     </div>
 
-    <style>
-        .button-container {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        #language-select {
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-    </style>
+    <!-- Voice Navigation State (Hidden) -->
+    <input type="checkbox" class="voice-toggle" id="voiceNavigationToggle" style="display:none;">
+    
+    <script src="https://kit.fontawesome.com/4e9c1e6e5b.js" crossorigin="anonymous"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
     <script>
-        // Function to show the chat interface and hide the landing page
-        // This function is no longer needed as navigation to /chatbot is handled by script.js
-        // function showChat() {
-        //     document.querySelector('.landing-page').style.display = 'none';
-        //     document.querySelector('.chat-interface').style.display = 'block';
-        // }
-
-        // Function to hide the chat interface and show the landing page
-        // This function is no longer needed.
-        // function hideChat() {
-        //     document.querySelector('.chat-interface').style.display = 'none';
-        //     document.querySelector('.landing-page').style.display = 'block';
-        // }
-
         // Accessibility Modal Functions
         function openAccessibilitySettings() {
             document.querySelector('.accessibility-modal').style.display = 'block';
-            // Load saved settings if any (for future implementation)
             loadAccessibilitySettings();
         }
 
@@ -261,23 +238,26 @@
         }
 
         function loadAccessibilitySettings() {
-            // Placeholder for loading settings from localStorage or a backend
             const textSize = localStorage.getItem('textSize') || '16';
             document.getElementById('textSizeSlider').value = textSize;
             document.getElementById('currentTextSize').textContent = `Current: ${textSize}px`;
             document.body.style.fontSize = `${textSize}px`;
-
-            document.getElementById('voiceCommandsToggle').checked = localStorage.getItem('voiceCommands') === 'true';
-            document.getElementById('eyeTrackingToggle').checked = localStorage.getItem('eyeTracking') === 'true';
-            document.getElementById('screenReaderToggle').checked = localStorage.getItem('screenReader') === 'true';
             
             const highContrastToggle = document.getElementById('highContrastToggle');
             const isHighContrast = localStorage.getItem('highContrast') === 'true';
+            if (highContrastToggle) {
             highContrastToggle.checked = isHighContrast;
             if (isHighContrast) {
                 document.body.classList.add('high-contrast-mode');
             } else {
                 document.body.classList.remove('high-contrast-mode');
+                }
+            }
+
+            // Load screen reader settings
+            const screenReaderToggle = document.getElementById('screenReaderToggle');
+            if (screenReaderToggle) {
+                screenReaderToggle.checked = localStorage.getItem('screenReader') === 'true';
             }
         }
 
@@ -286,438 +266,114 @@
             localStorage.setItem('textSize', textSize);
             document.body.style.fontSize = `${textSize}px`;
 
-            const voiceCommands = document.getElementById('voiceCommandsToggle').checked;
-            localStorage.setItem('voiceCommands', voiceCommands);
-            console.log('Voice Commands:', voiceCommands);
-
-            const eyeTracking = document.getElementById('eyeTrackingToggle').checked;
-            localStorage.setItem('eyeTracking', eyeTracking);
-            console.log('Eye Tracking Input:', eyeTracking);
-
-            const screenReader = document.getElementById('screenReaderToggle').checked;
-            localStorage.setItem('screenReader', screenReader);
-            console.log('Screen Reader Optimization:', screenReader);
-
-            const highContrast = document.getElementById('highContrastToggle').checked;
-            localStorage.setItem('highContrast', highContrast);
-            if (highContrast) {
+            const highContrastToggle = document.getElementById('highContrastToggle');
+            if (highContrastToggle) {
+                localStorage.setItem('highContrast', highContrastToggle.checked);
+                if (highContrastToggle.checked) {
                 document.body.classList.add('high-contrast-mode');
             } else {
                 document.body.classList.remove('high-contrast-mode');
             }
-            console.log('High Contrast Mode:', highContrast);
-            
-            // Ensure voice recognition starts/stops with the toggle
-            document.getElementById('voiceCommandsToggle').addEventListener('change', toggleVoiceCommands);
+            }
 
-            // Initial load of settings when the page loads
-            window.onload = function() {
-                loadAccessibilitySettings();
-                // Initialize voice commands if enabled
-                const voiceCommandsToggle = document.getElementById('voiceCommandsToggle');
-                if (voiceCommandsToggle.checked) {
-                    // Add a small delay to ensure DOM is fully loaded
-                    setTimeout(() => {
-                        toggleVoiceCommands();
-                        speakText("Voice commands are active. You can say commands like 'enable high contrast', 'open chat', or 'focus input'.");
-                    }, 1000);
-                }
-            };
+            const screenReaderToggle = document.getElementById('screenReaderToggle');
+            if (screenReaderToggle) {
+                localStorage.setItem('screenReader', screenReaderToggle.checked);
+            }
 
             alert('Settings saved!');
             closeAccessibilitySettings();
         }
 
-        document.getElementById('textSizeSlider').oninput = function() {
-            document.getElementById('currentTextSize').textContent = `Current: ${this.value}px`;
-            document.body.style.fontSize = `${this.value}px`;
-        };
-
-        let navRecognition = null; // For continuous voice commands
-        let chatbotRecognition = null; // For Speak button (toggle)
-        let isNavListening = false; // Track continuous listening state
-        let isChatbotListening = false; // Track Speak button listening state
-        let screenReaderActive = false; // Track screen reader state
-        const utterance = new SpeechSynthesisUtterance();
-        const COMMAND_COOLDOWN_MS = 2000; // 2 seconds cooldown
-        let lastCommandExecutedTime = {};
-
-        function speakText(text) {
-            if (speechSynthesis.speaking) {
-                speechSynthesis.cancel(); // Stop current speech before starting new one
-            }
-            utterance.text = text;
-            speechSynthesis.speak(utterance);
+        // Text size slider functionality
+        const textSizeSlider = document.getElementById('textSizeSlider');
+        if (textSizeSlider) {
+            textSizeSlider.addEventListener('input', function() {
+                const size = this.value;
+                document.getElementById('currentTextSize').textContent = `Current: ${size}px`;
+                document.body.style.fontSize = `${size}px`;
+            });
         }
 
-        function handleScreenReaderClick(event) {
-            if (screenReaderActive) {
-                const targetText = event.target.innerText || event.target.textContent;
-                if (targetText && targetText.trim() !== '') {
-                    speakText(targetText.trim());
+        // Initialize voice navigation if it was enabled from another page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load accessibility settings on page load
+            loadAccessibilitySettings();
+
+            if (sessionStorage.getItem('voiceNavigationPersistent') === 'true') {
+                const voiceToggle = document.getElementById('voiceNavigationToggle');
+                if (voiceToggle) {
+                    voiceToggle.checked = true;
+                    // Start voice recognition with a slight delay to ensure proper initialization
+                    setTimeout(() => {
+                        startVoiceRecognition(null, true);
+                    }, 300);
                 }
             }
-        }
 
-        document.getElementById('screenReaderToggle').addEventListener('change', (event) => {
-            screenReaderActive = event.target.checked;
-            if (screenReaderActive) {
-                document.addEventListener('click', handleScreenReaderClick);
-                speakText("Screen reader enabled. Click on any text to hear it aloud.");
-            } else {
-                document.removeEventListener('click', handleScreenReaderClick);
-                if (speechSynthesis.speaking) {
-                    speechSynthesis.cancel(); // Stop any ongoing speech
+            // Handle voice commands specific to home page
+            window.handleVoiceNavigationCommand = function(command) {
+                console.log('Processing voice command:', command);
+                
+                if (command.includes("start chat") || command.includes("open chat") || command.includes("go to chat")) {
+                    // Preserve voice navigation state
+                    sessionStorage.setItem('voiceNavigationPersistent', 'true');
+                    // Navigate to chat
+                    window.location.href = '/chatbot';
+                    speakText("Opening chat interface.");
+                } 
+                else if (command.includes("learn more") || command.includes("show tutorial") || command.includes("open tutorial")) {
+                    sessionStorage.setItem('voiceNavigationPersistent', 'true');
+                    window.location.href = '/tutorial';
+                    speakText("Opening tutorial page.");
                 }
-                speakText("Screen reader disabled.");
-            }
-        });
-
-        // Function to handle voice commands for navigation and actions
-        function handleVoiceCommand(command) {
-            const lowerCommand = command.toLowerCase().trim();
-            const now = Date.now();
-
-            // Function to check and update cooldown
-            const checkCooldown = (cmdType) => {
-                if (lastCommandExecutedTime[cmdType] && (now - lastCommandExecutedTime[cmdType] < COMMAND_COOLDOWN_MS)) {
-                    console.log(`Command "${cmdType}" ignored due to cooldown.`);
-                    return false;
+                else if (command.includes("enable voice") || command.includes("start voice")) {
+                    const voiceToggle = document.getElementById('voiceNavigationToggle');
+                    if (voiceToggle) {
+                        voiceToggle.checked = true;
+                        sessionStorage.setItem('voiceNavigationPersistent', 'true');
+                        startVoiceRecognition(null, true);
+                        speakText("Voice navigation enabled.");
+                    }
                 }
-                lastCommandExecutedTime[cmdType] = now;
-                return true;
-            };
-
-            // Log the received command for debugging
-            console.log("Processing voice command:", lowerCommand);
-
-            // Check for high contrast commands first
-            if (lowerCommand.includes("high contrast")) {
-                if (lowerCommand.includes("on") || lowerCommand.includes("enable")) {
-                    if (checkCooldown('high_contrast_on')) {
-                        document.getElementById('highContrastToggle').checked = true;
-                        document.getElementById('highContrastToggle').dispatchEvent(new Event('change'));
-                        saveAccessibilitySettings();
+                else if (command.includes("disable voice") || command.includes("stop voice")) {
+                    const voiceToggle = document.getElementById('voiceNavigationToggle');
+                    if (voiceToggle) {
+                        voiceToggle.checked = false;
+                        sessionStorage.removeItem('voiceNavigationPersistent');
+                        if (window.recognition) {
+                            window.recognition.stop();
+                        }
+                        speakText("Voice navigation disabled.");
+                    }
+                }
+                // Add other accessibility commands as needed
+                else if (command.includes("increase text size")) {
+                    adjustTextSize('increase');
+                    speakText("Increasing text size.");
+                }
+                else if (command.includes("decrease text size")) {
+                    adjustTextSize('decrease');
+                    speakText("Decreasing text size.");
+                }
+                else if (command.includes("enable high contrast")) {
+                    const highContrastToggle = document.getElementById('highContrastToggle');
+                    if (highContrastToggle) {
+                        highContrastToggle.checked = true;
+                        toggleHighContrast();
                         speakText("High contrast mode enabled.");
                     }
-                } else if (lowerCommand.includes("off") || lowerCommand.includes("disable")) {
-                    if (checkCooldown('high_contrast_off')) {
-                        document.getElementById('highContrastToggle').checked = false;
-                        document.getElementById('highContrastToggle').dispatchEvent(new Event('change'));
-                        saveAccessibilitySettings();
+                }
+                else if (command.includes("disable high contrast")) {
+                    const highContrastToggle = document.getElementById('highContrastToggle');
+                    if (highContrastToggle) {
+                        highContrastToggle.checked = false;
+                        toggleHighContrast();
                         speakText("High contrast mode disabled.");
                     }
                 }
-            }
-            // Check for screen reader commands
-            else if (lowerCommand.includes("screen reader")) {
-                if (lowerCommand.includes("on") || lowerCommand.includes("enable")) {
-                    if (checkCooldown('screen_reader_on')) {
-                        document.getElementById('screenReaderToggle').checked = true;
-                        document.getElementById('screenReaderToggle').dispatchEvent(new Event('change'));
-                        saveAccessibilitySettings();
-                        speakText("Screen reader optimization enabled.");
-                    }
-                } else if (lowerCommand.includes("off") || lowerCommand.includes("disable")) {
-                    if (checkCooldown('screen_reader_off')) {
-                        document.getElementById('screenReaderToggle').checked = false;
-                        document.getElementById('screenReaderToggle').dispatchEvent(new Event('change'));
-                        saveAccessibilitySettings();
-                        speakText("Screen reader optimization disabled.");
-                    }
-                }
-            }
-            // Check for voice command toggle
-            else if (lowerCommand.includes("voice command")) {
-                if (lowerCommand.includes("on") || lowerCommand.includes("enable")) {
-                    if (checkCooldown('voice_commands_on')) {
-                        const voiceCommandsToggle = document.getElementById('voiceCommandsToggle');
-                        if (!voiceCommandsToggle.checked) {
-                            voiceCommandsToggle.checked = true;
-                            voiceCommandsToggle.dispatchEvent(new Event('change'));
-                            saveAccessibilitySettings();
-                            speakText("Voice commands enabled.");
-                        }
-                    }
-                } else if (lowerCommand.includes("off") || lowerCommand.includes("disable")) {
-                    if (checkCooldown('voice_commands_off')) {
-                        const voiceCommandsToggle = document.getElementById('voiceCommandsToggle');
-                        if (voiceCommandsToggle.checked) {
-                            voiceCommandsToggle.checked = false;
-                            voiceCommandsToggle.dispatchEvent(new Event('change'));
-                            saveAccessibilitySettings();
-                            speakText("Voice commands disabled.");
-                        }
-                    }
-                }
-            }
-            // Check for chat commands
-            else if (lowerCommand.includes("chat")) {
-                if (lowerCommand.includes("open") || lowerCommand.includes("start")) {
-                    if (checkCooldown('open_chat')) {
-                        if (document.querySelector('.chat-interface').style.display !== 'block') {
-                            showChat();
-                            speakText("Opening chat interface.");
-                        }
-                    }
-                } else if (lowerCommand.includes("close") || lowerCommand.includes("exit")) {
-                    if (checkCooldown('close_chat')) {
-                        if (document.querySelector('.chat-interface').style.display === 'block') {
-                            hideChat();
-                            speakText("Closing chat interface.");
-                        }
-                    }
-                }
-            }
-            // Check for accessibility settings
-            else if (lowerCommand.includes("accessibility")) {
-                if (lowerCommand.includes("open") || lowerCommand.includes("settings")) {
-                    if (checkCooldown('open_accessibility')) {
-                        openAccessibilitySettings();
-                        speakText("Opening accessibility settings.");
-                    }
-                } else if (lowerCommand.includes("close") || lowerCommand.includes("exit")) {
-                    if (checkCooldown('close_accessibility')) {
-                        closeAccessibilitySettings();
-                        speakText("Closing accessibility settings.");
-                    }
-                }
-            }
-            // Check for input focus
-            else if (lowerCommand.includes("focus") || lowerCommand.includes("type")) {
-                if (checkCooldown('focus_input')) {
-                    document.getElementById('user-input').focus();
-                    speakText("Input field focused.");
-                }
-            }
-            // Check for send message
-            else if (lowerCommand.includes("send")) {
-                if (checkCooldown('send_message')) {
-                    sendMessage();
-                    speakText("Message sent.");
-                }
-            }
-            // Check for home navigation
-            else if (lowerCommand.includes("home") || lowerCommand.includes("go home")) {
-                if (checkCooldown('home')) {
-                    window.location.href = "#";
-                    speakText("Navigating to home page.");
-                }
-            }
-        }
-
-        // Function to toggle voice commands (initialize/deinitialize navRecognition and continuous listening)
-        function toggleVoiceCommands() {
-            const voiceCommandsEnabled = document.getElementById('voiceCommandsToggle').checked;
-
-            if (voiceCommandsEnabled) {
-                if (!navRecognition) {
-                    navRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-                    navRecognition.continuous = true;
-                    navRecognition.interimResults = false;
-                    navRecognition.lang = 'en-US';
-
-                    navRecognition.onstart = () => {
-                        console.log('Continuous voice command recognition started');
-                        isNavListening = true;
-                    };
-
-                    navRecognition.onresult = (event) => {
-                        const transcript = Array.from(event.results)
-                            .map(result => result[0].transcript)
-                            .join('');
-                        console.log("Nav Command Transcript:", transcript);
-                        if (!isChatbotListening) {
-                            handleVoiceCommand(transcript);
-                        }
-                    };
-
-                    navRecognition.onerror = (event) => {
-                        console.error("Voice command recognition error:", event.error);
-                        if (event.error === 'not-allowed') {
-                            speakText("Microphone access denied. Please allow microphone access in your browser settings.");
-                            console.warn("Microphone access denied by user or system.");
-                        } else if (event.error === 'no-speech') {
-                            console.log("No speech detected.");
-                        } else if (event.error === 'aborted') {
-                            console.log("Speech recognition aborted.");
-                        } else {
-                            console.log(`Error with voice commands: ${event.error}. Attempting to restart...`);
-                            speakText(`Error with voice commands: ${event.error}. Trying to restart.`);
-                        }
-                        isNavListening = false;
-                        // Attempt to restart recognition after an error, unless it's 'not-allowed'
-                        if (event.error !== 'not-allowed') {
-                            setTimeout(() => {
-                                const voiceCommandsEnabled = document.getElementById('voiceCommandsToggle').checked;
-                                if (voiceCommandsEnabled && !isChatbotListening) {
-                                    navRecognition.start();
-                                }
-                            }, 1000); // 1 second delay before attempting restart
-                        }
-                    };
-
-                    navRecognition.onend = () => {
-                        console.log('Continuous voice command recognition ended');
-                        isNavListening = false;
-                        const voiceCommandsEnabled = document.getElementById('voiceCommandsToggle').checked;
-                        // Only restart if voice commands are still enabled and chatbot is not listening
-                        if (voiceCommandsEnabled && !isChatbotListening) {
-                            setTimeout(() => {
-                                if (voiceCommandsEnabled && !isChatbotListening) {
-                                    navRecognition.start();
-                                }
-                            }, 500); // 500ms delay
-                        }
-                    };
-                }
-                // Start continuous recognition if it's not already running
-                if (!isNavListening) {
-                    navRecognition.start();
-                }
-            } else {
-                if (navRecognition && (isNavListening || isChatbotListening)) {
-                    navRecognition.stop();
-                }
-                isNavListening = false;
-                isChatbotListening = false;
-                const speakButton = document.querySelector('button[onclick="startVoiceRecognition()"]');
-                if (speakButton) {
-                    speakButton.textContent = '🎙️ Speak';
-                }
-                console.log('Voice commands disabled');
-            }
-        }
-
-        // Function to start/stop voice recognition on button click (for chatbot input)
-        function startVoiceRecognition() {
-            const speakButton = document.querySelector('button[onclick="startVoiceRecognition()"]');
-
-            if (!chatbotRecognition) {
-                chatbotRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-                chatbotRecognition.continuous = false; // Not continuous for this button
-                chatbotRecognition.interimResults = false;
-                chatbotRecognition.lang = 'en-US';
-
-                chatbotRecognition.onstart = () => {
-                    console.log('Chatbot voice recognition started');
-                    speakButton.textContent = '🎙️ Listening...';
-                    isChatbotListening = true;
-                    if (isNavListening && navRecognition) {
-                        navRecognition.stop(); // Temporarily stop continuous navigation
-                        console.log('Temporarily stopped continuous navigation for chatbot input.');
-                    }
-                };
-
-                chatbotRecognition.onresult = (event) => {
-                    const transcript = Array.from(event.results)
-                        .map(result => result[0].transcript)
-                        .join('');
-                    document.getElementById('user-input').value = transcript;
-                    sendMessage(transcript);
-                    console.log('Chatbot input transcript:', transcript);
-                };
-
-                chatbotRecognition.onerror = (event) => {
-                    console.error("Chatbot recognition error:", event.error);
-                    if (event.error === 'not-allowed') {
-                        alert("Microphone access denied. Please allow microphone access for the Speak button.");
-                    } else if (event.error === 'no-speech') {
-                        console.log("No speech detected for chatbot input.");
-                    } else if (event.error === 'aborted') {
-                        console.log("Chatbot speech recognition aborted.");
-                    } else {
-                        alert(`Error with Speak button: ${event.error}. Please try again.`);
-                    }
-                    isChatbotListening = false;
-                    speakButton.textContent = '🎙️ Speak';
-                    const voiceCommandsEnabled = document.getElementById('voiceCommandsToggle').checked;
-                    if (voiceCommandsEnabled && !isNavListening && navRecognition) {
-                        navRecognition.start(); // Resume continuous if it was active and voice commands are enabled
-                        console.log('Resumed continuous navigation after chatbot input error.');
-                    }
-                };
-
-                chatbotRecognition.onend = () => {
-                    console.log('Chatbot voice recognition ended');
-                    isChatbotListening = false;
-                    speakButton.textContent = '🎙️ Speak';
-                    const voiceCommandsEnabled = document.getElementById('voiceCommandsToggle').checked;
-                    if (voiceCommandsEnabled && !isNavListening && navRecognition) {
-                        navRecognition.start(); // Resume continuous if it was active and voice commands are enabled
-                        console.log('Resumed continuous navigation after chatbot input end.');
-                    }
-                };
-            }
-
-            if (isChatbotListening) {
-                chatbotRecognition.stop(); // Stop listening if already active
-            } else {
-                chatbotRecognition.start(); // Start listening if not active
-            }
-        }
-
-        // Function to send message to the chatbot
-        function sendMessage(userMessage = null) {
-            userMessage = userMessage || document.getElementById('user-input').value;
-
-            if (!userMessage) {
-                alert("Please type or speak a message.");
-                return;
-            }
-
-            // Display the user's message in the chat box
-            const chatBox = document.getElementById('chat-box');
-            chatBox.innerHTML += `<div class="user-message">You: ${userMessage}</div>`;
-
-            // Clear the input field
-            document.getElementById('user-input').value = '';
-
-            // Send the message to the server (POST request to backend)
-            fetch('/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ message: userMessage })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Display the chatbot's response
-                chatBox.innerHTML += `<div class="bot-message">Bot: ${data.response}</div>`;
-            })
-            .catch(error => console.error("Error:", error));
-        }
-
-        // Function to translate the chat content
-        function translateChat() {
-            const chatBox = document.getElementById('chat-box');
-            const targetLang = document.getElementById('language-select').value;
-            const messages = chatBox.getElementsByTagName('div');
-            
-            for (let message of messages) {
-                const text = message.textContent.split(': ')[1]; // Get the message content after the prefix
-                
-                fetch('/translate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        text: text,
-                        target_lang: targetLang
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.translation) {
-                        const prefix = message.textContent.split(': ')[0] + ': ';
-                        message.textContent = prefix + data.translation;
-                    }
-                })
-                .catch(error => console.error('Translation error:', error));
-            }
-        }
+            };
+        });
     </script>
 </body>
 </html>

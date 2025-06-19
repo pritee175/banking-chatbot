@@ -49,10 +49,10 @@
                 <div class="setting-item-header">
                     <span class="setting-text-header">
                         <i class="fas fa-microphone"></i>
-                        <span>Voice Commands</span>
+                        <span>Voice Navigation</span>
                     </span>
                     <label class="switch">
-                        <input type="checkbox" id="voiceCommandsToggle">
+                        <input type="checkbox" class="voice-toggle" id="voiceNavigationToggle">
                         <span class="slider round"></span>
                     </label>
                 </div>
@@ -82,5 +82,209 @@
         </div>
     </div>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        // Handle voice commands specific to chatbot page
+        window.handleVoiceNavigationCommand = function(command) {
+            console.log('Processing voice command:', command);
+            
+            if (command.includes("back to home") || command.includes("go to home") || command.includes("return home")) {
+                sessionStorage.setItem('voiceNavigationPersistent', 'true');
+                window.location.href = '/home';
+                speakText("Returning to home page.");
+            }
+            else if (command.includes("start mike") || command.includes("start mic") || command.includes("activate microphone")) {
+                const speakButton = document.getElementById('speak-button');
+                if (speakButton) {
+                    // First stop the continuous voice navigation temporarily
+                    if (window.recognition) {
+                        window.recognition.stop();
+                    }
+                    
+                    speakText("Activating voice input for chat.");
+                    
+                    // Wait for the speech to finish, then start chat voice input
+                    setTimeout(() => {
+                        // Create a new recognition instance for chat input
+                        const chatRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                        chatRecognition.continuous = false;
+                        chatRecognition.interimResults = true;
+                        chatRecognition.lang = 'en-US';
+
+                        chatRecognition.onstart = () => {
+                            console.log('Chat voice recognition started');
+                            speakButton.textContent = '🔴 Recording...';
+                            speakButton.classList.add('recording');
+                        };
+
+                        chatRecognition.onresult = (event) => {
+                            const transcript = Array.from(event.results)
+                                .map(result => result[0].transcript)
+                                .join('');
+                            
+                            if (event.results[0].isFinal) {
+                                console.log('Final transcript:', transcript);
+                                document.getElementById('user-input').value = transcript;
+                                
+                                // Modified sendMessage to handle voice response
+                                fetch('/chat', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ message: transcript })
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    // Display the chatbot's response
+                                    const chatBox = document.getElementById('chat-box');
+                                    const userMsgElem = document.createElement('p');
+                                    userMsgElem.className = 'user-message';
+                                    userMsgElem.innerHTML = `<strong>You:</strong> ${transcript}`;
+                                    chatBox.appendChild(userMsgElem);
+
+                                    const botMsgElem = document.createElement('p');
+                                    botMsgElem.className = 'bot-message';
+                                    botMsgElem.innerHTML = `<strong>Bot:</strong> ${data.response}`;
+                                    chatBox.appendChild(botMsgElem);
+                                    chatBox.scrollTop = chatBox.scrollHeight;
+
+                                    // Read out the chatbot's response
+                                    const responseText = data.response.replace(/\*\*/g, '').replace(/📌|📝|👉/g, '');
+                                    const utterance = new SpeechSynthesisUtterance(responseText);
+                                    
+                                    // Detect if the response is in Hindi (contains Devanagari script)
+                                    const containsHindi = /[\u0900-\u097F]/.test(responseText);
+                                    if (containsHindi) {
+                                        utterance.lang = 'hi-IN'; // Set language to Hindi
+                                        utterance.voice = window.speechSynthesis.getVoices()
+                                            .find(voice => voice.lang === 'hi-IN' || voice.lang.startsWith('hi'));
+                                    } else {
+                                        utterance.lang = 'en-US'; // Default to English
+                                    }
+                                    
+                                    // When the bot finishes speaking, restart voice input
+                                    utterance.onend = () => {
+                                        console.log("Bot finished speaking, restarting voice input");
+                                        // Set prompt language based on previous conversation
+                                        const nextPrompt = containsHindi ? 
+                                            "आप अपना अगला सवाल पूछ सकते हैं" : 
+                                            "You can speak your next question";
+                                        
+                                        const promptUtterance = new SpeechSynthesisUtterance(nextPrompt);
+                                        promptUtterance.lang = containsHindi ? 'hi-IN' : 'en-US';
+                                        if (containsHindi) {
+                                            promptUtterance.voice = window.speechSynthesis.getVoices()
+                                                .find(voice => voice.lang === 'hi-IN' || voice.lang.startsWith('hi'));
+                                        }
+                                        
+                                        // Speak the prompt and then start recognition
+                                        promptUtterance.onend = () => {
+                                            // Short delay before starting new voice recognition
+                                            setTimeout(() => {
+                                                // Create and start new recognition for next input
+                                                const newChatRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                                                newChatRecognition.continuous = false;
+                                                newChatRecognition.interimResults = true;
+                                                newChatRecognition.lang = containsHindi ? 'hi-IN' : 'en-US';
+
+                                                newChatRecognition.onstart = () => {
+                                                    console.log('New chat voice recognition started');
+                                                    speakButton.textContent = '🔴 Recording...';
+                                                    speakButton.classList.add('recording');
+                                                };
+
+                                                newChatRecognition.onresult = chatRecognition.onresult;
+                                                newChatRecognition.onerror = chatRecognition.onerror;
+                                                newChatRecognition.onend = chatRecognition.onend;
+
+                                                newChatRecognition.start();
+                                            }, 1000);
+                                        };
+                                        
+                                        window.speechSynthesis.speak(promptUtterance);
+                                    };
+
+                                    // Initialize voices if needed
+                                    if (window.speechSynthesis.getVoices().length === 0) {
+                                        window.speechSynthesis.onvoiceschanged = () => {
+                                            window.speechSynthesis.speak(utterance);
+                                        };
+                                    } else {
+                                        window.speechSynthesis.speak(utterance);
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    speakText("I'm sorry, there was an error processing your request.");
+                                });
+
+                                // After sending, reset the button and restart continuous navigation
+                                speakButton.textContent = '🎙️ Speak';
+                                speakButton.classList.remove('recording');
+                                document.getElementById('user-input').value = '';
+                                
+                                // Restart continuous voice navigation after a short delay
+                                setTimeout(() => {
+                                    if (sessionStorage.getItem('voiceNavigationPersistent') === 'true') {
+                                        startVoiceRecognition(null, true);
+                                    }
+                                }, 1000);
+                            }
+                        };
+
+                        chatRecognition.onerror = (event) => {
+                            console.error('Chat recognition error:', event.error);
+                            speakButton.textContent = '🎙️ Speak';
+                            speakButton.classList.remove('recording');
+                            
+                            // Restart continuous voice navigation
+                            if (sessionStorage.getItem('voiceNavigationPersistent') === 'true') {
+                                startVoiceRecognition(null, true);
+                            }
+                        };
+
+                        chatRecognition.onend = () => {
+                            console.log('Chat voice recognition ended');
+                            speakButton.textContent = '🎙️ Speak';
+                            speakButton.classList.remove('recording');
+                            
+                            // Restart continuous voice navigation
+                            if (sessionStorage.getItem('voiceNavigationPersistent') === 'true') {
+                                startVoiceRecognition(null, true);
+                            }
+                        };
+
+                        // Start the chat recognition
+                        chatRecognition.start();
+                    }, 1000);
+                }
+            }
+            // Keep other accessibility commands
+            else if (command.includes("increase text size")) {
+                adjustTextSize('increase');
+                speakText("Increasing text size.");
+            }
+            else if (command.includes("decrease text size")) {
+                adjustTextSize('decrease');
+                speakText("Decreasing text size.");
+            }
+            else if (command.includes("enable high contrast")) {
+                const highContrastToggle = document.getElementById('highContrastToggle');
+                if (highContrastToggle) {
+                    highContrastToggle.checked = true;
+                    toggleHighContrast();
+                    speakText("High contrast mode enabled.");
+                }
+            }
+            else if (command.includes("disable high contrast")) {
+                const highContrastToggle = document.getElementById('highContrastToggle');
+                if (highContrastToggle) {
+                    highContrastToggle.checked = false;
+                    toggleHighContrast();
+                    speakText("High contrast mode disabled.");
+                }
+            }
+        };
+    </script>
 </body>
 </html> 

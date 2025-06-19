@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AccessBank Login</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 min-h-screen flex items-center justify-center">
+  <main class="w-full max-w-md mx-auto bg-gray-800 rounded-xl shadow-lg p-8">
+    <h1 class="text-3xl font-bold text-center text-white mb-2">Welcome Back</h1>
+    <p class="text-center text-gray-300 mb-6">Sign in to your AccessBank account using your preferred method</p>
+    <div role="tablist" aria-label="Login method" class="flex mb-6">
+      <button id="tab-traditional" role="tab" aria-selected="true" aria-controls="panel-traditional"
+        class="flex-1 py-2 text-white bg-gray-700 rounded-l-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold" tabindex="0" onclick="switchTab('traditional')">
+        Traditional
+      </button>
+      <button id="tab-accessible" role="tab" aria-selected="false" aria-controls="panel-accessible"
+        class="flex-1 py-2 text-white bg-gray-700 rounded-r-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold" tabindex="-1" onclick="switchTab('accessible')">
+        Accessible
+      </button>
+    </div>
+    <div id="panel-traditional" role="tabpanel" aria-labelledby="tab-traditional" class="transition-opacity duration-300 opacity-100">
+      <form aria-label="Traditional Login Form" class="space-y-4">
+        <label class="block text-gray-300" for="email"><span class="sr-only">Email Address</span>Email Address</label>
+        <div class="relative">
+          <input id="email" name="email" type="email" required autocomplete="email" aria-label="Email Address" class="w-full px-4 py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your email">
+          <span class="absolute left-3 top-2.5 text-gray-400"><i class="fas fa-envelope"></i></span>
+        </div>
+        <label class="block text-gray-300" for="password"><span class="sr-only">Password</span>Password</label>
+        <div class="relative">
+          <input id="password" name="password" type="password" required autocomplete="current-password" aria-label="Password" class="w-full px-4 py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your password">
+          <span class="absolute left-3 top-2.5 text-gray-400"><i class="fas fa-lock"></i></span>
+        </div>
+        <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors font-semibold">Sign In</button>
+      </form>
+      <button class="w-full mt-4 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors" aria-label="Forgot your password?">Forgot your password?</button>
+      <div class="text-center text-gray-400 mt-6">Don't have an account?</div>
+      <button class="w-full mt-2 py-2 border border-gray-600 text-white rounded hover:bg-gray-700 transition-colors flex items-center justify-center gap-2" aria-label="Create Account"><i class="fas fa-user"></i> Create Account</button>
+    </div>
+    <div id="panel-accessible" role="tabpanel" aria-labelledby="tab-accessible" class="transition-opacity duration-300 opacity-0 hidden">
+      <div class="flex flex-col gap-3 mb-4">
+        <button id="biometric-btn" class="w-full py-2 bg-gray-700 text-white rounded flex items-center gap-2 justify-center hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Biometric Authentication"><i class="fas fa-fingerprint"></i> <span class="font-bold">Biometric Authentication</span></button>
+        <button class="w-full py-2 bg-gray-700 text-white rounded flex items-center gap-2 justify-center hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Voice Authentication"><i class="fas fa-microphone"></i> <span class="font-bold">Voice Authentication</span></button>
+        <button class="w-full py-2 bg-gray-700 text-white rounded flex items-center gap-2 justify-center hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Eye Tracking Login"><i class="fas fa-eye"></i> <span class="font-bold">Eye Tracking Login</span></button>
+      </div>
+      <div class="text-gray-400 text-center mb-4">Choose the authentication method that works best for you</div>
+      <button class="w-full py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors" aria-label="Forgot your password?">Forgot your password?</button>
+      <div class="text-center text-gray-400 mt-6">Don't have an account?</div>
+      <button class="w-full mt-2 py-2 border border-gray-600 text-white rounded hover:bg-gray-700 transition-colors flex items-center justify-center gap-2" aria-label="Create Account"><i class="fas fa-user"></i> Create Account</button>
+    </div>
+  </main>
+  <script src="https://kit.fontawesome.com/4e9c1e6e5b.js" crossorigin="anonymous"></script>
+  <script>
+    // Tab switch with animation and ARIA
+    function switchTab(tab) {
+      const traditional = document.getElementById('panel-traditional');
+      const accessible = document.getElementById('panel-accessible');
+      const tabTraditional = document.getElementById('tab-traditional');
+      const tabAccessible = document.getElementById('tab-accessible');
+      if (tab === 'traditional') {
+        traditional.classList.remove('hidden');
+        traditional.classList.add('opacity-100');
+        accessible.classList.add('hidden');
+        accessible.classList.remove('opacity-100');
+        tabTraditional.setAttribute('aria-selected', 'true');
+        tabTraditional.tabIndex = 0;
+        tabAccessible.setAttribute('aria-selected', 'false');
+        tabAccessible.tabIndex = -1;
+      } else {
+        accessible.classList.remove('hidden');
+        accessible.classList.add('opacity-100');
+        traditional.classList.add('hidden');
+        traditional.classList.remove('opacity-100');
+        tabAccessible.setAttribute('aria-selected', 'true');
+        tabAccessible.tabIndex = 0;
+        tabTraditional.setAttribute('aria-selected', 'false');
+        tabTraditional.tabIndex = -1;
+      }
+    }
+
+    // Biometric login simulation and voice guidance
+    document.getElementById('biometric-btn').addEventListener('click', function() {
+      setTimeout(() => {
+        const welcomeText = "Welcome to AccessBank.";
+        const utterance = new window.SpeechSynthesisUtterance(welcomeText);
+        utterance.lang = 'en-US';
+        window.speechSynthesis.speak(utterance);
+        sessionStorage.setItem('enableVoiceNavigation', 'true');
+        sessionStorage.setItem('voiceNavigationPersistent', 'true');
+        utterance.onend = function() {
+          window.location.href = '/home';
+        };
+        setTimeout(() => { window.location.href = '/home'; }, 3000);
+      }, 200);
+    });
+
+    // Voice Authentication
+    const voiceBtn = document.querySelector('button[aria-label="Voice Authentication"]');
+    if (voiceBtn) {
+      voiceBtn.addEventListener('click', function() {
+        // Simulate voice login success
+        window.location.href = '/home';
+      });
+    }
+
+    // Eye Tracking Login
+    const eyeBtn = document.querySelector('button[aria-label="Eye Tracking Login"]');
+    if (eyeBtn) {
+      eyeBtn.addEventListener('click', function() {
+        // Simulate eye tracking login success
+        window.location.href = '/home';
+      });
+    }
+
+    document.querySelector('form[aria-label="Traditional Login Form"]').addEventListener('submit', function(e) {
+      e.preventDefault();
+      // Simulate successful login (replace with real logic or AJAX call)
+      window.location.href = '/home';
+    });
+  </script>
+</body>
+</html> 
