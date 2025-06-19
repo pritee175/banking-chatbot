@@ -14,6 +14,9 @@ let recognitionRestartTimeoutId = null;
 
 let chatFontSize = 16; // Default font size in px
 
+let screenReaderActive = false;
+let lastSpokenText = '';
+
 function sendMessage(message) {
     let userInput = message || document.getElementById("user-input").value;
     if (!userInput) return;
@@ -394,28 +397,50 @@ document.addEventListener('DOMContentLoaded', function() {
         currentTextSizeSpan.textContent = `Current: ${initialSize}px`;
     }
 
+    // High Contrast Toggle: Ensure it works on all pages
     const highContrastToggle = document.getElementById('highContrastToggle');
     if (highContrastToggle) {
-        highContrastToggle.addEventListener('change', () => {
-            toggleHighContrast();
-            localStorage.setItem('highContrast', highContrastToggle.checked);
-        });
+        // Restore state from localStorage
         const savedHighContrast = localStorage.getItem('highContrast');
         if (savedHighContrast !== null) {
             highContrastToggle.checked = (savedHighContrast === 'true');
+        }
+        // Add event listener
+        highContrastToggle.addEventListener('change', function() {
+            localStorage.setItem('highContrast', highContrastToggle.checked);
+            toggleHighContrast();
+        });
+        // Auto-enable if checked
+        if (highContrastToggle.checked) {
             toggleHighContrast();
         }
     }
 
+    // Screen Reader Toggle: Ensure it works on all pages
     const screenReaderToggle = document.getElementById('screenReaderToggle');
     if (screenReaderToggle) {
-        screenReaderToggle.addEventListener('change', () => {
-            toggleScreenReader();
-            localStorage.setItem('screenReader', screenReaderToggle.checked);
-        });
+        // Restore state from localStorage
         const savedScreenReader = localStorage.getItem('screenReader');
         if (savedScreenReader !== null) {
             screenReaderToggle.checked = (savedScreenReader === 'true');
+        }
+        // Set initial aria-checked
+        screenReaderToggle.setAttribute('aria-checked', screenReaderToggle.checked ? 'true' : 'false');
+        // Add event listeners
+        screenReaderToggle.addEventListener('change', function() {
+            localStorage.setItem('screenReader', screenReaderToggle.checked);
+            toggleScreenReader();
+        });
+        screenReaderToggle.addEventListener('keydown', function(e) {
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                screenReaderToggle.checked = !screenReaderToggle.checked;
+                localStorage.setItem('screenReader', screenReaderToggle.checked);
+                toggleScreenReader();
+            }
+        });
+        // Auto-enable if checked
+        if (screenReaderToggle.checked) {
             toggleScreenReader();
         }
     }
@@ -460,11 +485,81 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function toggleHighContrast() {
-    document.body.classList.toggle('high-contrast', document.getElementById('highContrastToggle').checked);
+    const highContrastToggle = document.getElementById('highContrastToggle');
+    const enabled = highContrastToggle && highContrastToggle.checked;
+    if (enabled) {
+        document.body.classList.add('high-contrast-mode');
+    } else {
+        document.body.classList.remove('high-contrast-mode');
+    }
 }
 
 function toggleScreenReader() {
-    document.body.classList.toggle('screen-reader-optimized', document.getElementById('screenReaderToggle').checked);
+    const toggle = document.getElementById('screenReaderToggle');
+    const enabled = toggle.checked;
+    // Update aria-checked for accessibility
+    toggle.setAttribute('aria-checked', enabled ? 'true' : 'false');
+    document.body.classList.toggle('screen-reader-optimized', enabled);
+    screenReaderActive = enabled;
+
+    // Add ARIA landmarks and roles dynamically
+    if (enabled) {
+        // Add ARIA roles/landmarks if not already present
+        if (!document.querySelector('nav[role="navigation"]')) {
+            const nav = document.querySelector('nav');
+            if (nav) nav.setAttribute('role', 'navigation');
+        }
+        if (!document.querySelector('main[role="main"]')) {
+            const main = document.querySelector('main') || document.createElement('main');
+            main.setAttribute('role', 'main');
+            if (!main.parentNode) document.body.appendChild(main);
+        }
+        if (!document.querySelector('footer[role="contentinfo"]')) {
+            const footer = document.querySelector('footer');
+            if (footer) footer.setAttribute('role', 'contentinfo');
+        }
+        // Make all buttons and links focusable
+        document.querySelectorAll('button, a, input, select, textarea').forEach(el => {
+            el.setAttribute('tabindex', '0');
+        });
+        // Add event listeners for reading text on hover/focus
+        document.addEventListener('mouseover', screenReaderSpeakHandler, true);
+        document.addEventListener('focusin', screenReaderSpeakHandler, true);
+    } else {
+        // Remove ARIA attributes if disabled
+        toggle.setAttribute('aria-checked', 'false');
+        document.querySelectorAll('button, a, input, select, textarea').forEach(el => {
+            el.removeAttribute('tabindex');
+        });
+        // Remove event listeners
+        document.removeEventListener('mouseover', screenReaderSpeakHandler, true);
+        document.removeEventListener('focusin', screenReaderSpeakHandler, true);
+        window.speechSynthesis.cancel();
+        lastSpokenText = '';
+    }
+}
+
+function screenReaderSpeakHandler(e) {
+    if (!screenReaderActive) return;
+    let text = '';
+    // Prefer aria-label, alt, title, then textContent
+    if (e.target.getAttribute('aria-label')) {
+        text = e.target.getAttribute('aria-label');
+    } else if (e.target.alt) {
+        text = e.target.alt;
+    } else if (e.target.title) {
+        text = e.target.title;
+    } else {
+        text = e.target.innerText || e.target.textContent;
+    }
+    text = text && text.trim();
+    if (text && text !== lastSpokenText) {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = /[\u0900-\u097F]/.test(text) ? 'hi-IN' : 'en-US';
+        window.speechSynthesis.speak(utter);
+        lastSpokenText = text;
+    }
 }
 
 function adjustTextSize(action) {
@@ -485,25 +580,22 @@ function adjustTextSize(action) {
 // Function for translation
 function translateChat() {
     const chatBox = document.getElementById('chat-box');
-    const userInput = document.getElementById('user-input').value;
-    const translateLang = document.getElementById('translate-lang').value; // Get selected language
+    const translateLang = document.getElementById('translate-lang').value;
 
-    // Check if there's content to translate
-    let contentToTranslate = userInput.trim(); // Prioritize user input
+    // Collect all chat messages (user and bot)
+    let allMessages = [];
+    chatBox.querySelectorAll('.user-message, .bot-message').forEach(msg => {
+        // Remove HTML tags and prefixes
+        let text = msg.textContent.replace(/^You:|^Bot:|^Bot \(Error\):/, '').trim();
+        if (text) allMessages.push(text);
+    });
 
-    // If user input is empty, try to translate the last bot message
-    if (!contentToTranslate && chatBox.lastElementChild) {
-        const lastMessageText = chatBox.lastElementChild.textContent.trim();
-        // Ensure it's a bot message to avoid translating user's previous input inadvertently
-        if (lastMessageText.startsWith('Bot:')) {
-            contentToTranslate = lastMessageText.replace(/^Bot:\s*/, '');
-        }
-    }
-
-    if (!contentToTranslate) {
-        alert("Nothing to translate! Please type a message or ensure there's a message in the chat.");
+    if (allMessages.length === 0) {
+        alert("Nothing to translate! Please chat first.");
         return;
     }
+
+    const contentToTranslate = allMessages.join('\n');
 
     fetch('/translate', {
         method: 'POST',
@@ -516,9 +608,21 @@ function translateChat() {
     .then(response => response.json())
     .then(data => {
         if (data.translation) {
-            // Display translated text directly in the chat box
-            chatBox.innerHTML += `<p><strong>Translation (${translateLang}):</strong> ${data.translation}</p>`;
-            chatBox.scrollTop = chatBox.scrollHeight; // Scroll to bottom
+            // Display translated chat
+            chatBox.innerHTML += `<p><strong>Translation (${translateLang}):</strong><br>${data.translation.replace(/\n/g, '<br>')}</p>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Read the translation aloud if voice navigation is enabled
+            if (isVoiceNavigationEnabled) {
+                let lang = 'en-US';
+                // Detect Hindi (Devanagari script)
+                if (/[\u0900-\u097F]/.test(data.translation)) {
+                    lang = 'hi-IN';
+                }
+                const utterance = new SpeechSynthesisUtterance(data.translation);
+                utterance.lang = lang;
+                window.speechSynthesis.speak(utterance);
+            }
         } else if (data.error) {
             alert("Translation Error: " + data.error);
         }
