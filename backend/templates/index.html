@@ -9,7 +9,7 @@
 </head>
 <body>
     <header class="navbar">
-        <div class="logo">A AccessBank</div>
+        <div class="logo">AccessBank</div>
         <nav>
             <ul>
                 <li><a href="#" class="active"><i class="fas fa-home"></i> Home</a></li>
@@ -27,7 +27,7 @@
             <p>Your inclusive banking assistant designed for everyone. Experience banking with accessibility at its core, featuring voice commands, sign language support, and intuitive design.</p>
             <div class="hero-buttons">
                 <button class="start-chat-button" onclick="showChat()">Start Chat</button>
-                <button class="learn-more-button" onclick="showTutorial()">Learn More</button>
+                <button class="learn-more-button" style="font-size: 1.3em; font-weight: bold;" onclick="showTutorial()">Learn More</button>
             </div>
         </div>
 
@@ -395,11 +395,10 @@
                         speakText("High contrast mode disabled.");
                     }
                 }
-                else if (command.includes("read about section for me")) {
+                else if (command === "read about section") {
                     const aboutSection = document.getElementById('about-section');
                     if (aboutSection) {
                         aboutSection.scrollIntoView({ behavior: 'smooth' });
-                        // Gather all text from the about section
                         let aboutText = '';
                         aboutSection.querySelectorAll('h2, p').forEach(el => {
                             aboutText += el.innerText + ' ';

@@ -17,6 +17,180 @@ let chatFontSize = 16; // Default font size in px
 let screenReaderActive = false;
 let lastSpokenText = '';
 
+// --- Sign Navigation (Sign Language Recognition) ---
+let signNavActive = false;
+let signNavVideo = null;
+let signNavToggle = null;
+
+// --- Gesture Recognition for Sign Navigation ---
+let handposeModel = null;
+let gestureInterval = null;
+
+function createSignNavToggle() {
+    if (document.getElementById('sign-nav-toggle')) return;
+    signNavToggle = document.createElement('button');
+    signNavToggle.id = 'sign-nav-toggle';
+    signNavToggle.innerHTML = '📷';
+    signNavToggle.title = 'Toggle Camera (Sign Navigation)';
+    signNavToggle.style.position = 'fixed';
+    signNavToggle.style.bottom = '24px';
+    signNavToggle.style.right = '24px';
+    signNavToggle.style.zIndex = '9999';
+    signNavToggle.style.width = '48px';
+    signNavToggle.style.height = '48px';
+    signNavToggle.style.borderRadius = '50%';
+    signNavToggle.style.background = '#222';
+    signNavToggle.style.color = '#fff';
+    signNavToggle.style.fontSize = '2em';
+    signNavToggle.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+    signNavToggle.style.border = 'none';
+    signNavToggle.style.cursor = 'pointer';
+    signNavToggle.style.display = 'flex';
+    signNavToggle.style.alignItems = 'center';
+    signNavToggle.style.justifyContent = 'center';
+    signNavToggle.style.opacity = '0.85';
+    signNavToggle.addEventListener('click', toggleSignNavCamera);
+    document.body.appendChild(signNavToggle);
+}
+
+function toggleSignNavCamera() {
+    if (!signNavVideo) {
+        signNavVideo = document.createElement('video');
+        signNavVideo.id = 'sign-nav-video';
+        signNavVideo.autoplay = true;
+        signNavVideo.muted = true;
+        signNavVideo.style.position = 'fixed';
+        signNavVideo.style.bottom = '80px';
+        signNavVideo.style.right = '24px';
+        signNavVideo.style.width = '200px';
+        signNavVideo.style.height = '150px';
+        signNavVideo.style.zIndex = '9999';
+        signNavVideo.style.borderRadius = '12px';
+        signNavVideo.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+        document.body.appendChild(signNavVideo);
+        // Start webcam
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+            signNavVideo.srcObject = stream;
+        }).catch(err => {
+            alert('Could not access camera: ' + err.message);
+        });
+    } else {
+        if (signNavVideo.style.display === 'none') {
+            signNavVideo.style.display = 'block';
+        } else {
+            signNavVideo.style.display = 'none';
+        }
+    }
+}
+
+async function loadHandposeModel() {
+    if (handposeModel) return handposeModel;
+    if (!window.tf || !window.handpose) {
+        // Load TensorFlow.js and Handpose
+        const tfScript = document.createElement('script');
+        tfScript.src = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.20.0/dist/tf.min.js';
+        document.head.appendChild(tfScript);
+        await new Promise(res => tfScript.onload = res);
+        const handposeScript = document.createElement('script');
+        handposeScript.src = 'https://cdn.jsdelivr.net/npm/@tensorflow-models/handpose@0.0.7/dist/handpose.min.js';
+        document.head.appendChild(handposeScript);
+        await new Promise(res => handposeScript.onload = res);
+    }
+    handposeModel = await window.handpose.load();
+    return handposeModel;
+}
+
+// --- Sign Navigation Gesture Actions (Additive) ---
+// REMOVE the old signNavGestureActions function (do not use it)
+
+// --- Patch for correct home/chatbot navigation (additive, non-breaking) ---
+function signNavGestureActionsPatched(fingerCount) {
+    if (fingerCount === 1) {
+        if (window.location.pathname !== '/' && window.location.pathname !== '/home') window.location.href = '/home';
+        else if (window.location.pathname !== '/') window.location.href = '/';
+        speakText('Navigating to home page.');
+    } else if (fingerCount === 2) {
+        if (window.location.pathname !== '/chatbot') window.location.href = '/chatbot';
+        speakText('Opening chat.');
+    } else if (fingerCount === 3) {
+        window.scrollBy({ top: window.innerHeight, left: 0, behavior: 'smooth' });
+        speakText('Scrolling down.');
+    }
+}
+
+// Ensure startGestureRecognition is defined for patching
+if (typeof startGestureRecognition !== 'function') {
+    var startGestureRecognition = function() {};
+}
+
+// Patch gesture recognition to call signNavGestureActions
+if (typeof startGestureRecognition === 'function') {
+    const originalStartGestureRecognition = startGestureRecognition;
+    startGestureRecognition = async function() {
+        await loadHandposeModel();
+        if (!signNavVideo) { console.log('SignNav video not found'); return; }
+        if (gestureInterval) clearInterval(gestureInterval);
+        gestureInterval = setInterval(async () => {
+            if (!signNavVideo || signNavVideo.style.display === 'none') {
+                console.log('SignNav video not visible');
+                return;
+            }
+            if (signNavVideo.readyState < 2) {
+                console.log('Video not ready');
+                return;
+            }
+            try {
+                const predictions = await handposeModel.estimateHands(signNavVideo);
+                console.log('Handpose predictions:', predictions);
+                if (predictions.length > 0) {
+                    const fingerCount = countExtendedFingers(predictions[0]);
+                    console.log('Finger count:', fingerCount);
+                    signNavGestureActionsPatched(fingerCount);
+                } else {
+                    console.log('No hand detected');
+                }
+            } catch (err) {
+                console.error('Handpose error:', err);
+            }
+        }, 2000);
+    }
+}
+
+function countExtendedFingers(prediction) {
+    // Simple logic: count fingers where tip is above pip (y axis)
+    // Thumb: 4, Index: 8, Middle: 12, Ring: 16, Pinky: 20
+    const tips = [4, 8, 12, 16, 20];
+    let count = 0;
+    for (let i = 0; i < tips.length; i++) {
+        const tip = prediction.landmarks[tips[i]];
+        const pip = prediction.landmarks[tips[i] - 2];
+        if (tip && pip && tip[1] < pip[1]) count++;
+    }
+    return count;
+}
+
+// Start gesture recognition when sign navigation is activated
+function activateSignNavigation() {
+    if (signNavActive) return;
+    signNavActive = true;
+    createSignNavToggle();
+    speakText('Sign navigation activated. Camera is ready for sign language recognition.');
+    setTimeout(startGestureRecognition, 2000);
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key.toLowerCase() === 'm') {
+        sessionStorage.setItem('signNavActive', 'true');
+        activateSignNavigation();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (sessionStorage.getItem('signNavActive') === 'true') {
+        activateSignNavigation();
+    }
+});
+
 function sendMessage(message) {
     let userInput = message || document.getElementById("user-input").value;
     if (!userInput) return;
@@ -679,5 +853,74 @@ function updateChatFontSize() {
     document.querySelectorAll('.user-message, .bot-message').forEach(elem => {
         elem.style.fontSize = chatFontSize + 'px';
     });
+}
+
+// --- Chatbot Speak Button Voice Navigation Pause/Resume ---
+function pauseVoiceNavigation() {
+    if (recognition && recognition.recognizing) {
+        recognition.stop();
+    }
+}
+function resumeVoiceNavigation() {
+    if (sessionStorage.getItem('voiceNavigationPersistent') === 'true') {
+        setTimeout(() => {
+            startVoiceRecognition(null, true);
+        }, 500);
+    }
+}
+
+// Patch speakText to allow callback after reading
+function speakTextWithCallback(text, callback) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = /[\u0900-\u097F]/.test(text) ? 'hi-IN' : 'en-US';
+    isBotSpeaking = true;
+    if (recognitionRestartTimeoutId) {
+        clearTimeout(recognitionRestartTimeoutId);
+        recognitionRestartTimeoutId = null;
+    }
+    if (recognition && recognition.recognizing) {
+        recognition.stop();
+    }
+    utterance.onend = () => {
+        isBotSpeaking = false;
+        if (typeof callback === 'function') callback();
+    };
+    window.speechSynthesis.speak(utterance);
+}
+
+// Enhance chatbot speak button logic
+if (window.location.pathname === '/chatbot') {
+    const speakButton = document.getElementById('speak-button');
+    if (speakButton) {
+        const originalToggleSpeak = window.toggleSpeak;
+        window.toggleSpeak = function(speakButton) {
+            pauseVoiceNavigation();
+            if (recognition && recognition.recognizing) {
+                recognition.stop();
+                speakButton.textContent = '🎙️ Speak';
+                speakButton.classList.remove('recording');
+                isSpeakButtonActive = false;
+            } else {
+                startVoiceRecognition(speakButton, false);
+            }
+        };
+    }
+    // Patch sendMessage to use speakTextWithCallback
+    const originalSendMessage = window.sendMessage;
+    window.sendMessage = function(message) {
+        originalSendMessage.call(this, message);
+        // Wait for bot response to be added, then read it
+        setTimeout(() => {
+            const chatBox = document.getElementById('chat-box');
+            const lastMsg = chatBox && chatBox.querySelector('.bot-message:last-child');
+            if (lastMsg) {
+                const text = lastMsg.textContent.replace(/^Bot:/, '').trim();
+                if (text) {
+                    pauseVoiceNavigation();
+                    speakTextWithCallback(text, resumeVoiceNavigation);
+                }
+            }
+        }, 800);
+    };
 }
 

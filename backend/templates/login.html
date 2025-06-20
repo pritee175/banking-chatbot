@@ -49,8 +49,39 @@
       <div class="text-center text-gray-400 mt-6">Don't have an account?</div>
       <button class="w-full mt-2 py-2 border border-gray-600 text-white rounded hover:bg-gray-700 transition-colors flex items-center justify-center gap-2" aria-label="Create Account"><i class="fas fa-user"></i> Create Account</button>
     </div>
+
+    <!-- Signup Panel -->
+    <div id="panel-signup" role="tabpanel" class="transition-opacity duration-300 opacity-0 hidden">
+      <h2 class="text-xl font-bold text-center text-white mb-4">Create Your Account</h2>
+      <form id="signup-form" class="space-y-4">
+          <label class="block text-gray-300" for="signup-email">Email Address</label>
+          <div class="relative">
+              <input id="signup-email" name="email" type="email" required autocomplete="email" class="w-full px-4 py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your email">
+          </div>
+          <label class="block text-gray-300" for="signup-password">Password</label>
+          <div class="relative">
+              <input id="signup-password" name="password" type="password" required autocomplete="new-password" class="w-full px-4 py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Create a password">
+          </div>
+          <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors font-semibold">Create Account</button>
+      </form>
+      <div class="relative flex py-5 items-center">
+          <div class="flex-grow border-t border-gray-600"></div>
+          <span class="flex-shrink mx-4 text-gray-400">Or continue with</span>
+          <div class="flex-grow border-t border-gray-600"></div>
+      </div>
+      <button id="google-signup-btn" class="w-full py-2 border border-gray-600 text-white rounded hover:bg-gray-700 transition-colors flex items-center justify-center gap-2">
+          <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.31 5.48-4.9 7.23l7.98 6.19C42.6 40.58 46.98 33.22 46.98 24.55z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.98-6.19c-2.16 1.45-4.9 2.3-8.01 2.3-6.27 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></svg>
+          Sign up with Google
+      </button>
+      <div class="text-center mt-6">
+          <a href="#" id="back-to-login-link" class="text-blue-400 hover:text-blue-300">Already have an account? Log in</a>
+      </div>
+    </div>
   </main>
   <script src="https://kit.fontawesome.com/4e9c1e6e5b.js" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
   <script>
     // Tab switch with animation and ARIA
     function switchTab(tab) {
@@ -79,28 +110,49 @@
       }
     }
 
-    // Biometric login simulation and voice guidance
-    document.getElementById('biometric-btn').addEventListener('click', function() {
-      setTimeout(() => {
-        const welcomeText = "Welcome to AccessBank.";
-        const utterance = new window.SpeechSynthesisUtterance(welcomeText);
-        utterance.lang = 'en-US';
-        window.speechSynthesis.speak(utterance);
-        sessionStorage.setItem('enableVoiceNavigation', 'true');
+    // Biometric Authentication (direct navigation)
+    const biometricBtn = document.getElementById('biometric-btn');
+    if (biometricBtn) {
+      biometricBtn.addEventListener('click', function() {
         sessionStorage.setItem('voiceNavigationPersistent', 'true');
-        utterance.onend = function() {
-          window.location.href = '/home';
-        };
-        setTimeout(() => { window.location.href = '/home'; }, 3000);
-      }, 200);
-    });
-
-    // Voice Authentication
-    const voiceBtn = document.querySelector('button[aria-label="Voice Authentication"]');
-    if (voiceBtn) {
-      voiceBtn.addEventListener('click', function() {
-        // Simulate voice login success
         window.location.href = '/home';
+      });
+    }
+
+    // Voice Authentication for Accessible Login (no email prompt)
+    const voiceAuthBtn = document.querySelector('button[aria-label="Voice Authentication"]');
+    if (voiceAuthBtn) {
+      let voiceAuthRecognition = null;
+      voiceAuthBtn.addEventListener('click', function() {
+        if (!('webkitSpeechRecognition' in window)) {
+          alert("Sorry, your browser doesn't support speech recognition. Please use Google Chrome.");
+          return;
+        }
+        if (voiceAuthRecognition) {
+          voiceAuthRecognition.stop();
+        }
+        voiceAuthRecognition = new webkitSpeechRecognition();
+        voiceAuthRecognition.continuous = false;
+        voiceAuthRecognition.interimResults = false;
+        voiceAuthRecognition.lang = 'en-US';
+        alert('Voice authentication started. Please say "enter" to authenticate.');
+        voiceAuthRecognition.onresult = function(event) {
+          const transcript = Array.from(event.results)
+            .map(result => result[0].transcript)
+            .join('')
+            .toLowerCase();
+          if (transcript.includes('enter')) {
+            alert('Voice authentication successful! Navigating to dashboard...');
+            sessionStorage.setItem('voiceNavigationPersistent', 'true');
+            window.location.href = '/home';
+          } else {
+            alert('Voice not recognized. Please try again and say "enter".');
+          }
+        };
+        voiceAuthRecognition.onerror = function(event) {
+          alert('Voice authentication error: ' + event.error);
+        };
+        voiceAuthRecognition.start();
       });
     }
 
@@ -113,10 +165,93 @@
       });
     }
 
+    // Panel switching logic
+    function switchPanel(panelToShow) {
+        const panels = ['panel-traditional', 'panel-accessible', 'panel-signup'];
+        panels.forEach(panelId => {
+            const panel = document.getElementById(panelId);
+            if(panel) {
+                if (panelId === panelToShow) {
+                    panel.classList.remove('hidden', 'opacity-0');
+                } else {
+                    panel.classList.add('hidden', 'opacity-0');
+                }
+            }
+        });
+    }
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCLwYbTBmlRU7c2bmAz05NCnOtbCHa0IP4",
+      authDomain: "banking-chatbot-33fe4.firebaseapp.com",
+      projectId: "banking-chatbot-33fe4",
+      storageBucket: "banking-chatbot-33fe4.appspot.com",
+      messagingSenderId: "1032597128292",
+      appId: "1:1032597128292:web:50f3a21894dfb34dfc4b71",
+      measurementId: "G-Y1BJ9KT3PH"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    firebase.analytics();
+
+    // Add Firebase authentication for traditional login
     document.querySelector('form[aria-label="Traditional Login Form"]').addEventListener('submit', function(e) {
       e.preventDefault();
-      // Simulate successful login (replace with real logic or AJAX call)
-      window.location.href = '/home';
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      firebase.auth().signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          alert('Login successful!');
+          window.location.href = '/home';
+        })
+        .catch((error) => {
+          alert('Firebase Auth Error: ' + error.message);
+        });
+    });
+
+    // --- Signup Logic ---
+
+    // Event listener for "Create Account" buttons to show signup panel
+    document.querySelectorAll('button[aria-label="Create Account"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.querySelector('[role="tablist"]').classList.add('hidden');
+            switchPanel('panel-signup');
+        });
+    });
+
+    // Event listener for "Back to Login" link
+    document.getElementById('back-to-login-link').addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelector('[role="tablist"]').classList.remove('hidden');
+        switchTab('traditional'); // Default back to traditional login view
+    });
+
+    // New email/password signup logic
+    document.getElementById('signup-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const email = document.getElementById('signup-email').value;
+        const password = document.getElementById('signup-password').value;
+        firebase.auth().createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                alert('Account created successfully!');
+                window.location.href = '/home';
+            })
+            .catch((error) => {
+                alert('Firebase Signup Error: ' + error.message);
+            });
+    });
+
+    // Google Sign-In logic
+    document.getElementById('google-signup-btn').addEventListener('click', function() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        firebase.auth().signInWithPopup(provider)
+            .then((result) => {
+                alert('Signed up with Google successfully!');
+                window.location.href = '/home';
+            }).catch((error) => {
+                alert('Google Sign-In Error: ' + error.message);
+            });
     });
   </script>
 </body>

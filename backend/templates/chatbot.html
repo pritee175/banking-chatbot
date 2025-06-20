@@ -293,6 +293,16 @@
                 }
             }
         };
+
+        // Ensure sign navigation camera toggle works on this page
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key.toLowerCase() === 'm') {
+                if (!document.getElementById('sign-nav-toggle')) {
+                    // Activate sign navigation (calls global function from script.js)
+                    if (typeof activateSignNavigation === 'function') activateSignNavigation();
+                }
+            }
+        });
     </script>
 </body>
 </html> 

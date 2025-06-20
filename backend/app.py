@@ -123,9 +123,8 @@ def chat():
 
         # Improved response formatting
         formatted_response = (
-            f"📌 **Your Query:** {user_message}\n\n"
-            f"📝 **Response:**\n{bot_response}\n\n"
-            "👉 Need more details? Just ask!"
+            f"\n{bot_response}\n\n"
+            " Need more details? Just ask!"
         )
     except Exception as e:
         formatted_response = f"❌ An unexpected error occurred: {str(e)}. Please try again."
