@@ -284,6 +284,14 @@
                     speakText("High contrast mode disabled.");
                 }
             }
+            else if (command.includes("stop mike") || command.includes("stop mic") || command.includes("deactivate microphone")) {
+                if (window.chatRecognition && typeof window.chatRecognition.stop === 'function') {
+                    window.chatRecognition.stop();
+                    speakText("Microphone stopped for chat input.");
+                } else {
+                    speakText("Microphone is not currently active.");
+                }
+            }
         };
     </script>
 </body>

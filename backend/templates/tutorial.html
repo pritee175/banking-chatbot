@@ -266,6 +266,18 @@
                         speakText("High contrast mode disabled.");
                     }
                 }
+                else if (command.includes("read it loudly")) {
+                    // Gather all main text content from the tutorial page
+                    let text = '';
+                    document.querySelectorAll('.tutorial-container h1, .tutorial-container h2, .tutorial-container h3, .tutorial-container p').forEach(el => {
+                        text += el.innerText + ' ';
+                    });
+                    speakText(text.trim());
+                }
+                else if (command.includes("stop reading")) {
+                    window.speechSynthesis.cancel();
+                    speakText("Stopped reading.");
+                }
             };
         });
     </script>

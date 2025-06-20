@@ -316,9 +316,7 @@
                 console.log('Processing voice command:', command);
                 
                 if (command.includes("start chat") || command.includes("open chat") || command.includes("go to chat")) {
-                    // Preserve voice navigation state
                     sessionStorage.setItem('voiceNavigationPersistent', 'true');
-                    // Navigate to chat
                     window.location.href = '/chatbot';
                     speakText("Opening chat interface.");
                 } 
@@ -326,6 +324,31 @@
                     sessionStorage.setItem('voiceNavigationPersistent', 'true');
                     window.location.href = '/tutorial';
                     speakText("Opening tutorial page.");
+                }
+                else if (command.includes("scroll down")) {
+                    window.scrollBy({ top: window.innerHeight, left: 0, behavior: 'smooth' });
+                    speakText("Scrolling down.");
+                }
+                else if (command.includes("about")) {
+                    const aboutSection = document.getElementById('about-section');
+                    if (aboutSection) {
+                        aboutSection.scrollIntoView({ behavior: 'smooth' });
+                        speakText("Navigating to about section.");
+                    }
+                }
+                else if (command.includes("features")) {
+                    const featuresSection = document.getElementById('features-section');
+                    if (featuresSection) {
+                        featuresSection.scrollIntoView({ behavior: 'smooth' });
+                        speakText("Navigating to features section.");
+                    }
+                }
+                else if (command.includes("contact")) {
+                    const contactSection = document.getElementById('contact-section');
+                    if (contactSection) {
+                        contactSection.scrollIntoView({ behavior: 'smooth' });
+                        speakText("Navigating to contact section.");
+                    }
                 }
                 else if (command.includes("enable voice") || command.includes("start voice")) {
                     const voiceToggle = document.getElementById('voiceNavigationToggle');
@@ -371,6 +394,22 @@
                         toggleHighContrast();
                         speakText("High contrast mode disabled.");
                     }
+                }
+                else if (command.includes("read about section for me")) {
+                    const aboutSection = document.getElementById('about-section');
+                    if (aboutSection) {
+                        aboutSection.scrollIntoView({ behavior: 'smooth' });
+                        // Gather all text from the about section
+                        let aboutText = '';
+                        aboutSection.querySelectorAll('h2, p').forEach(el => {
+                            aboutText += el.innerText + ' ';
+                        });
+                        speakText(aboutText.trim());
+                    }
+                }
+                else if (command.includes("stop reading")) {
+                    window.speechSynthesis.cancel();
+                    speakText("Stopped reading.");
                 }
             };
         });
